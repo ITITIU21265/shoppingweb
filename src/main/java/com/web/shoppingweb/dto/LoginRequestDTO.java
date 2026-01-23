@@ -1,11 +1,8 @@
 package com.web.shoppingweb.dto;
-
-import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginRequestDTO {
-    @NotBlank(message = "Username or email is required")
-    @JsonAlias({ "email", "identifier" })
+    @NotBlank(message = "Username is required")
     private String username;
     
     @NotBlank(message = "Password is required")
