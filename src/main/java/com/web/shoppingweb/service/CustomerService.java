@@ -1,46 +1,34 @@
 package com.web.shoppingweb.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import com.web.shoppingweb.dto.CustomerRequestDTO;
+import com.web.shoppingweb.dto.CustomerResponseDTO;
+import com.web.shoppingweb.dto.CustomerUpdateDTO;
+import org.springframework.data.domain.Page;
 
-import com.web.shoppingweb.dto.LoginRequestDTO;
-import com.web.shoppingweb.dto.LoginResponseDTO;
-import com.web.shoppingweb.entity.Customer;
-import com.web.shoppingweb.repository.CustomerRepository;
+import java.util.List;
 
-@Service
-public class CustomerService {
-    private final CustomerRepository customerRepository;
+public interface CustomerService {
 
-    @Autowired
-    public CustomerService(CustomerRepository customerRepository) {
-        this.customerRepository = customerRepository;
-    }
+    //Pagination + Sorting 
+    Page<CustomerResponseDTO> getAllCustomers(int page, int size, String sortBy, String sortDir);
 
-    @Transactional(readOnly = true)
-    public LoginResponseDTO login(LoginRequestDTO loginRequest) {
-        String identifier = loginRequest.getUsername();
-        Customer customer = customerRepository
-                .findByEmailOrUsername(identifier, identifier)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED,
-                        "Invalid credentials"
-                ));
+    CustomerResponseDTO getCustomerById(Long id);
 
-        if (!customer.getPassword().equals(loginRequest.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
-        }
+    CustomerResponseDTO createCustomer(CustomerRequestDTO requestDTO);
 
-        String role = Boolean.TRUE.equals(customer.getIsSeller()) ? "SELLER" : "CUSTOMER";
-        return new LoginResponseDTO(
-                null,
-                null,
-                customer.getUsername(),
-                customer.getEmail(),
-                role
-        );
-    }
+    CustomerResponseDTO updateCustomer(Long id, CustomerRequestDTO requestDTO);
+
+    //PATCH
+    CustomerResponseDTO partialUpdateCustomer(Long id, CustomerUpdateDTO updateDTO);
+
+    void deleteCustomer(Long id);
+
+    List<CustomerResponseDTO> searchCustomers(String keyword);
+
+    List<CustomerResponseDTO> getCustomersByStatus(String status);
+
+    // advanced search
+    List<CustomerResponseDTO> advancedSearch(String name, String email, String status);
 }
+
+

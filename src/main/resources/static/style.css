@@ -1,0 +1,203 @@
+/* Reset CSS cơ bản */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    height: 100vh;
+    width: 100%;
+    overflow: hidden; /* Tránh thanh cuộn */
+}
+
+.login-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+/* --- PANEL BÊN TRÁI (Màu tím) --- */
+.left-panel {
+    flex: 1; /* Chiếm khoảng 50-60% chiều rộng */
+    background-color: #2b243a; /* Màu tím than giống trong hình */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.character-img {
+    max-width: 80%;
+    max-height: 80vh;
+    object-fit: contain;
+    /* Hiệu ứng bóng đổ nhẹ cho nhân vật */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+/* --- PANEL BÊN PHẢI (Màu trắng) --- */
+.right-panel {
+    flex: 0.8; /* Chiếm phần còn lại, nhỏ hơn bên trái một chút */
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 350px; /* Giới hạn chiều rộng form cho đẹp */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Logo RIVE */
+.brand-logo {
+    font-weight: 400;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    color: #333;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 15px;
+}
+
+/* Nút Social */
+.social-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.social-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #eee;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.social-btn:hover {
+    background-color: #eee;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 10px 0 20px 0;
+}
+
+/* Tabs Login/Signup */
+.auth-tabs {
+    margin-bottom: 20px;
+}
+
+.tab {
+    margin-right: 20px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.tab.active {
+    font-weight: 600;
+    color: #222;
+}
+
+.tab.inactive {
+    color: #bbb;
+}
+
+/* Input Fields */
+.input-group {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #f0f0f0; /* Màu xám nhạt nền input */
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+    color: #333;
+}
+
+input:focus {
+    background-color: #e8e8e8;
+}
+
+/* Nút Login Đen */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #222;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #000;
+}
+
+/* Link quên mật khẩu */
+.forgot-pass {
+    text-align: center;
+    display: block;
+    margin-top: 15px;
+    font-size: 0.8rem;
+    color: #666;
+    text-decoration: none;
+}
+
+.forgot-pass:hover {
+    text-decoration: underline;
+}
+
+/* Alert Box màu vàng ở dưới */
+.alert-box {
+    margin-top: 40px;
+    padding: 12px;
+    border: 1px solid #fce3b4; /* Viền vàng cam */
+    background-color: #fffdf5; /* Nền vàng rất nhạt */
+    border-radius: 6px;
+    color: #8a6d3b;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+    }
+    
+    .left-panel {
+        display: none; /* Ẩn hình trên mobile hoặc đổi thành height nhỏ */
+    }
+    
+    .right-panel {
+        flex: 1;
+    }
+}

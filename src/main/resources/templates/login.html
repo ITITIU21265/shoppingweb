@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rive Login</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="left-panel">
+            <div class="character-wrapper">
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/3d-boy-riding-skateboard-5570889-4654516.png" alt="3D Character" class="character-img">
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="form-wrapper">
+                <h1 class="brand-logo">R I V E</h1>
+                
+                <p class="subtitle">Express login via Google and Facebook</p>
+                
+                <div class="social-buttons">
+                    <button class="social-btn google">
+                        <i class="fab fa-google"></i> Google
+                    </button>
+                    <button class="social-btn facebook">
+                        <i class="fab fa-facebook-f"></i> Facebook
+                    </button>
+                </div>
+
+                <hr class="divider">
+
+                <div class="auth-tabs">
+                    <span class="tab active">Log in</span>
+                    <span class="tab inactive">Sign up</span>
+                </div>
+
+                <form th:action="@{/api/auth/login}" method="post">
+                    <div class="input-group">
+                        <input type="text" name="username" placeholder="email or username" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="password" placeholder="password" required>
+                    </div>
+
+                    <button type="submit" class="login-btn">Log in</button>
+                </form>
+
+                <a href="#" class="forgot-pass">Forgot password?</a>
+
+                <div class="alert-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Looking for the old Rive?</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
