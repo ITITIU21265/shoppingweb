@@ -2,7 +2,7 @@ package com.web.shoppingweb.dto;
 
 public class LoginResponseDTO {
 
-    private String token;      
+    private String token;       // access token
     private String type = "Bearer";
     private String refreshToken;
     private String username;
