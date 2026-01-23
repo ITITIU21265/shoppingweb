@@ -34,12 +34,13 @@ public class CustomerService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
+        String role = Boolean.TRUE.equals(customer.getIsSeller()) ? "SELLER" : "CUSTOMER";
         return new LoginResponseDTO(
-                true,
-                "Login successful",
-                customer.getCustomerId(),
+                null,
+                null,
                 customer.getUsername(),
-                customer.getEmail()
+                customer.getEmail(),
+                role
         );
     }
 }
