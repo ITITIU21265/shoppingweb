@@ -1,25 +1,24 @@
 package com.web.shoppingweb.dto;
 
-import com.web.shoppingweb.entity.Role;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public class UpdateRoleDTO {
 
-    @NotNull(message = "Role is required")
-    private Role role;
+    @NotBlank(message = "Role code is required")
+    private String roleCode;
 
     public UpdateRoleDTO() {
     }
 
-    public UpdateRoleDTO(Role role) {
-        this.role = role;
+    public UpdateRoleDTO(String roleCode) {
+        this.roleCode = roleCode;
     }
 
-    public Role getRole() {
-        return role;
+    public String getRoleCode() {
+        return roleCode;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setRoleCode(String roleCode) {
+        this.roleCode = roleCode;
     }
 }

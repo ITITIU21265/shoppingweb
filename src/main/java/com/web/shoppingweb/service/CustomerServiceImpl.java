@@ -1,33 +1,41 @@
 package com.web.shoppingweb.service;
 
-import com.web.shoppingweb.dto.CustomerRequestDTO;
-import com.web.shoppingweb.dto.CustomerResponseDTO;
-import com.web.shoppingweb.dto.CustomerUpdateDTO;
-import com.web.shoppingweb.entity.Customer;
-import com.web.shoppingweb.entity.CustomerStatus;
-import com.web.shoppingweb.exception.DuplicateResourceException;
-import com.web.shoppingweb.exception.ResourceNotFoundException;
-import com.web.shoppingweb.repository.CustomerRepository;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.web.shoppingweb.dto.CustomerRequestDTO;
+import com.web.shoppingweb.dto.CustomerResponseDTO;
+import com.web.shoppingweb.dto.CustomerUpdateDTO;
+import com.web.shoppingweb.dto.LoginRequestDTO;
+import com.web.shoppingweb.dto.LoginResponseDTO;
+import com.web.shoppingweb.entity.Customer;
+import com.web.shoppingweb.entity.CustomerStatus;
+import com.web.shoppingweb.exception.DuplicateResourceException;
+import com.web.shoppingweb.exception.ResourceNotFoundException;
+import com.web.shoppingweb.repository.CustomerRepository;
 
 @Service 
 @Transactional 
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired 
-    public CustomerServiceImpl(CustomerRepository customerRepository) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
         this.customerRepository = customerRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override // Pagination + sorting
@@ -161,6 +169,30 @@ public class CustomerServiceImpl implements CustomerService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public LoginResponseDTO login(LoginRequestDTO loginRequest) {
+        String identifier = loginRequest.getUsername();
+        Customer customer = customerRepository
+                .findByEmailOrUsername(identifier, identifier)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Invalid credentials"
+                ));
+
+        if (!isPasswordMatch(loginRequest.getPassword(), customer.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+
+        String role = Boolean.TRUE.equals(customer.getIsSeller()) ? "SELLER" : "CUSTOMER";
+        return new LoginResponseDTO(
+                null,
+                null,
+                customer.getUsername(),
+                customer.getEmail(),
+                role
+        );
+    }
+
     // Parse enum from string
     private CustomerStatus parseStatus(String status) {
         try {
@@ -199,5 +231,15 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         return customer;
+    }
+
+    private boolean isPasswordMatch(String rawPassword, String storedPassword) {
+        if (storedPassword == null) {
+            return false;
+        }
+        if (passwordEncoder.matches(rawPassword, storedPassword)) {
+            return true;
+        }
+        return storedPassword.equals(rawPassword);
     }
 }

@@ -61,6 +61,8 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
+                .requestMatchers("/login").permitAll()
+                .requestMatchers("/style.css", "/stylesheet.css", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/customers/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/customers/**").hasRole("ADMIN")

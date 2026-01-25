@@ -4,9 +4,11 @@ import com.web.shoppingweb.dto.*;
 import com.web.shoppingweb.entity.RefreshToken;
 import com.web.shoppingweb.entity.Role;
 import com.web.shoppingweb.entity.User;
+import com.web.shoppingweb.entity.UserStatus;
 import com.web.shoppingweb.exception.DuplicateResourceException;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
 import com.web.shoppingweb.repository.RefreshTokenRepository;
+import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 import com.web.shoppingweb.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -80,7 +85,7 @@ public class UserServiceImpl implements UserService {
                 refreshToken.getToken(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole().name()
+                getPrimaryRoleCode(user)
         );
     }
 
@@ -103,8 +108,8 @@ public class UserServiceImpl implements UserService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setFullName(registerRequest.getFullName());
-        user.setRole(Role.USER);  // Default role
-        user.setIsActive(true);
+        user.setRoles(java.util.Set.of(getRoleByCode("CUSTOMER")));
+        user.setStatus(UserStatus.ACTIVE);
 
         User savedUser = userRepository.save(user);
 
@@ -181,7 +186,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        user.setRole(dto.getRole());
+        user.setRoles(java.util.Set.of(getRoleByCode(dto.getRoleCode())));
         User saved = userRepository.save(user);
 
         return convertToDTO(saved);
@@ -192,7 +197,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        user.setIsActive(!Boolean.TRUE.equals(user.getIsActive()));
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            user.setStatus(UserStatus.BLOCKED);
+        } else {
+            user.setStatus(UserStatus.ACTIVE);
+        }
         User saved = userRepository.save(user);
 
         return convertToDTO(saved);
@@ -228,7 +237,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // Soft delete
-        user.setIsActive(false);
+        user.setStatus(UserStatus.DELETED);
         userRepository.save(user);
     }
 
@@ -252,7 +261,7 @@ public class UserServiceImpl implements UserService {
                 refreshTokenStr,
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole().name()
+                getPrimaryRoleCode(user)
         );
     }
 
@@ -271,9 +280,28 @@ public class UserServiceImpl implements UserService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
-                user.getRole().name(),
-                user.getIsActive(),
+                getPrimaryRoleCode(user),
+                user.getStatus().name(),
                 user.getCreatedAt()
         );
+    }
+
+    private Role getRoleByCode(String code) {
+        return roleRepository.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + code));
+    }
+
+    private String getPrimaryRoleCode(User user) {
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            return "CUSTOMER";
+        }
+        for (String code : java.util.List.of("ADMIN", "SELLER", "CUSTOMER")) {
+            boolean match = user.getRoles().stream()
+                    .anyMatch(role -> code.equalsIgnoreCase(role.getCode()));
+            if (match) {
+                return code;
+            }
+        }
+        return user.getRoles().iterator().next().getCode();
     }
 }

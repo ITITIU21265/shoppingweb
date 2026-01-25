@@ -1,6 +1,7 @@
 package com.web.shoppingweb.service;
 
 import com.web.shoppingweb.entity.User;
+import com.web.shoppingweb.entity.UserStatus;
 import com.web.shoppingweb.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,10 +25,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         
+        boolean enabled = user.getStatus() == UserStatus.ACTIVE;
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
-                user.getIsActive(),
+                enabled,
                 true,
                 true,
                 true,
@@ -36,8 +38,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
     
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        return Collections.singletonList(
-            new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-        );
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return user.getRoles()
+                .stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getCode()))
+                .toList();
     }
 }

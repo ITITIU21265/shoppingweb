@@ -1,7 +1,17 @@
 package com.web.shoppingweb.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "customers")
@@ -19,7 +29,13 @@ public class Customer {
     
     @Column(unique = true, nullable = false, length = 100)
     private String email;
-    
+
+    @Column(name = "username", length = 50)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+
     @Column(length = 20)
     private String phone;
     
@@ -29,6 +45,9 @@ public class Customer {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private CustomerStatus status = CustomerStatus.ACTIVE;
+
+    @Column(name = "is_seller")
+    private Boolean isSeller = false;
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -99,6 +118,22 @@ public class Customer {
     public void setPhone(String phone) {
         this.phone = phone;
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
     
     public String getAddress() {
         return address;
@@ -114,6 +149,14 @@ public class Customer {
     
     public void setStatus(CustomerStatus status) {
         this.status = status;
+    }
+
+    public Boolean getIsSeller() {
+        return isSeller;
+    }
+
+    public void setIsSeller(Boolean isSeller) {
+        this.isSeller = isSeller;
     }
     
     public LocalDateTime getCreatedAt() {
@@ -133,8 +176,4 @@ public class Customer {
     }
 }
 
-//  Enum for status
-// enum CustomerStatus {
-//     ACTIVE,
-//     INACTIVE
-// }
+

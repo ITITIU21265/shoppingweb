@@ -1,11 +1,14 @@
 package com.web.shoppingweb.service;
 
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+
 import com.web.shoppingweb.dto.CustomerRequestDTO;
 import com.web.shoppingweb.dto.CustomerResponseDTO;
 import com.web.shoppingweb.dto.CustomerUpdateDTO;
-import org.springframework.data.domain.Page;
-
-import java.util.List;
+import com.web.shoppingweb.dto.LoginRequestDTO;
+import com.web.shoppingweb.dto.LoginResponseDTO;
 
 public interface CustomerService {
 
@@ -29,6 +32,8 @@ public interface CustomerService {
 
     // advanced search
     List<CustomerResponseDTO> advancedSearch(String name, String email, String status);
+
+    LoginResponseDTO login(LoginRequestDTO loginRequest);
 }
 
 

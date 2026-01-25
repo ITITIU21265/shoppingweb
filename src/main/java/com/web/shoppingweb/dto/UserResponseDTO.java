@@ -9,7 +9,7 @@ public class UserResponseDTO {
     private String email;
     private String fullName;
     private String role;
-    private Boolean isActive;
+    private String status;
     private LocalDateTime createdAt;
     
     // Constructors
@@ -17,13 +17,13 @@ public class UserResponseDTO {
     }
     
     public UserResponseDTO(Long id, String username, String email, String fullName, 
-                          String role, Boolean isActive, LocalDateTime createdAt) {
+                          String role, String status, LocalDateTime createdAt) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.fullName = fullName;
         this.role = role;
-        this.isActive = isActive;
+        this.status = status;
         this.createdAt = createdAt;
     }
     
@@ -68,12 +68,12 @@ public class UserResponseDTO {
         this.role = role;
     }
     
-    public Boolean getIsActive() {
-        return isActive;
+    public String getStatus() {
+        return status;
     }
     
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+    public void setStatus(String status) {
+        this.status = status;
     }
     
     public LocalDateTime getCreatedAt() {
