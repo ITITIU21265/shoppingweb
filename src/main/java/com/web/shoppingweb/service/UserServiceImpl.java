@@ -12,6 +12,8 @@ import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 import com.web.shoppingweb.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +50,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private JwtTokenProvider tokenProvider;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private static final long REFRESH_TOKEN_DAYS = 7L;
 
@@ -142,11 +148,14 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
 
-        user.setResetToken(token);
-        user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
-
-        userRepository.save(user);
+        jdbcTemplate.update(
+                "INSERT INTO password_resets (user_id, reset_token, expires_at) VALUES (?, ?, ?)",
+                user.getId(),
+                token,
+                Timestamp.valueOf(expiresAt)
+        );
 
         return token;
     }
@@ -154,10 +163,26 @@ public class UserServiceImpl implements UserService {
     @Override
     public void resetPassword(ResetPasswordDTO dto) {
 
-        User user = userRepository.findByResetToken(dto.getResetToken())
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid reset token"));
+        Long userId;
+        LocalDateTime expiresAt;
+        Timestamp usedAt;
+        try {
+            var row = jdbcTemplate.queryForMap(
+                    "SELECT user_id, expires_at, used_at FROM password_resets WHERE reset_token = ?",
+                    dto.getResetToken()
+            );
+            userId = ((Number) row.get("user_id")).longValue();
+            expiresAt = ((Timestamp) row.get("expires_at")).toLocalDateTime();
+            usedAt = (Timestamp) row.get("used_at");
+        } catch (EmptyResultDataAccessException ex) {
+            throw new ResourceNotFoundException("Invalid reset token");
+        }
 
-        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (usedAt != null) {
+            throw new IllegalArgumentException("Reset token has already been used");
+        }
+
+        if (expiresAt.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Reset token has expired");
         }
 
@@ -165,11 +190,16 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
-        user.setResetToken(null);
-        user.setResetTokenExpiry(null);
-
         userRepository.save(user);
+
+        jdbcTemplate.update(
+                "UPDATE password_resets SET used_at = ? WHERE reset_token = ?",
+                Timestamp.valueOf(LocalDateTime.now()),
+                dto.getResetToken()
+        );
     }
 
     //ADMIN FEATURES (Exercise 8)
