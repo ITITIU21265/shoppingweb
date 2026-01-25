@@ -74,7 +74,8 @@ public class UserServiceImpl implements UserService {
         String accessToken = tokenProvider.generateToken(authentication);
 
         // 3. Get user from DB
-        User user = userRepository.findByUsername(loginRequest.getUsername())
+        String identifier = loginRequest.getUsername();
+        User user = userRepository.findByEmailOrUsername(identifier, identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // 4. Create refresh token (valid 7 days)
