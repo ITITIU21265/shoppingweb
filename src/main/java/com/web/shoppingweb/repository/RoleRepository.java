@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.web.shoppingweb.entity.Role;
 
 @Repository
-public interface RoleRepository extends JpaRepository<Role, Long> {
+public interface RoleRepository extends JpaRepository<Role, Integer> {
     Optional<Role> findByCode(String code);
 }
