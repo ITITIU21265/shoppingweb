@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(nullable = false, unique = true, length = 30)
     private String code;
@@ -20,11 +20,11 @@ public class Role {
     @Column(nullable = false, length = 100)
     private String name;
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
