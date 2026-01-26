@@ -4,14 +4,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class ChangePasswordDTO {
-    @NotBlank
+    @NotBlank(message = "you have to enter your current password" )
     private String currentPassword;
     
     @NotBlank
-    @Size(min = 6)
+    @Size(min = 6, message = "your new password should be atleast 6 character")
     private String newPassword;
     
-    @NotBlank
+    @NotBlank(message = "please repeat your new password")
     private String confirmPassword;
     
     public String getCurrentPassword() {
