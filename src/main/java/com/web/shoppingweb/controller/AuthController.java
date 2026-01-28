@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.web.shoppingweb.dto.ChangePasswordDTO;
 import com.web.shoppingweb.dto.ForgotPasswordDTO;
@@ -28,7 +29,7 @@ import com.web.shoppingweb.service.UserService;
 
 import jakarta.validation.Valid;
 
-@RestController
+@Controller
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
@@ -37,6 +38,7 @@ public class AuthController {
     private UserService userService;
     
     @PostMapping("/login")
+    @ResponseBody
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
         LoginResponseDTO response = userService.login(loginRequest);
         return ResponseEntity.ok(response);
@@ -44,12 +46,14 @@ public class AuthController {
 
     
     @PostMapping("/register")
+    @ResponseBody
     public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody RegisterRequestDTO registerRequest) {
         UserResponseDTO response = userService.register(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @GetMapping("/me")
+    @ResponseBody
     public ResponseEntity<UserResponseDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -59,6 +63,7 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
+    @ResponseBody
     public ResponseEntity<Map<String, String>> logout() {
         // In JWT, logout is handled client-side by removing token
         Map<String, String> response = new HashMap<>();
@@ -67,6 +72,7 @@ public class AuthController {
     }
 
     @PutMapping("/change-password")
+    @ResponseBody
     public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -77,7 +83,8 @@ public class AuthController {
         response.put("message", "Password changed successfully");
         return ResponseEntity.ok(response);
     }
-        @PostMapping("/forgot-password")
+    @PostMapping("/forgot-password")
+    @ResponseBody
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto) {
         String token = userService.forgotPassword(dto.getEmail());
 
@@ -89,6 +96,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
+    @ResponseBody
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
         userService.resetPassword(dto);
 
@@ -98,9 +106,15 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @ResponseBody
     public ResponseEntity<LoginResponseDTO> refresh(@Valid @RequestBody RefreshTokenDTO dto) {
         LoginResponseDTO response = userService.refreshToken(dto.getRefreshToken());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
     }
 
 }

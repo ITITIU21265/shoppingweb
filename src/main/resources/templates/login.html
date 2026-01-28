@@ -1,64 +1,158 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rive Login</title>
-    <link rel="stylesheet" th:href="@{/style.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sliding Login/Signup Form</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Montserrat:400,800&display=swap"
+    />
+    <script src="/js/login.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#f6f5f7] font-display flex items-center justify-center">
+    <div
+      id="container"
+      class="relative w-[768px] max-w-full min-h-[480px] bg-white rounded-[10px] shadow-auth overflow-hidden"
+    >
+      <div
+        id="signInPanel"
+        class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out z-20"
+      >
+        <form id="login-form" class="w-full px-12 flex flex-col items-center text-center">
+          <h1 class="text-2xl font-bold mb-2">Đăng Nhập</h1>
+          <div class="flex gap-2 my-4">
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-google-plus-g"></i>
+            </a>
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+          </div>
+          <span class="text-xs text-gray-500 mb-4">hoặc sử dụng tài khoản của bạn</span>
+          <input
+            id="login-identifier"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="text"
+            placeholder="Email hoặc Username"
+          />
+          <input
+            id="login-password"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="password"
+            placeholder="Mật khẩu"
+          />
+          <a class="text-sm text-gray-600 my-3" href="#">Quên mật khẩu?</a>
+          <button
+            type="submit"
+            class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
+          >
+            Đăng Nhập
+          </button>
+        </form>
+      </div>
 
-    <div class="login-container">
-        <div class="left-panel">
-            <div class="character-wrapper">
-                <img src="https://cdni.iconscout.com/illustration/premium/thumb/3d-boy-riding-skateboard-5570889-4654516.png" alt="3D Character" class="character-img">
-            </div>
+      <div
+        id="signUpPanel"
+        class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out opacity-0 z-10"
+      >
+        <form id="signup-form" class="w-full px-12 flex flex-col items-center text-center">
+          <h1 class="text-2xl font-bold mb-2">Tạo tài khoản</h1>
+          <div class="flex gap-2 my-4">
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-google-plus-g"></i>
+            </a>
+            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+          </div>
+          <span class="text-xs text-gray-500 mb-4">hoặc sử dụng email để đăng ký</span>
+          <input
+            id="signup-fullname"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="text"
+            placeholder="Họ và tên"
+          />
+          <input
+            id="signup-username"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="text"
+            placeholder="Username"
+          />
+          <input
+            id="signup-email"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="email"
+            placeholder="Email"
+          />
+          <input
+            id="signup-password"
+            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
+            type="password"
+            placeholder="Mật khẩu"
+          />
+          <button
+            type="submit"
+            class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
+          >
+            Đăng Ký
+          </button>
+        </form>
+      </div>
+
+      <div
+        id="overlayContainer"
+        class="absolute inset-y-0 left-1/2 w-1/2 overflow-hidden transition-transform duration-700 ease-in-out z-50"
+      >
+        <div
+          id="overlay"
+          class="relative left-[-100%] h-full w-[200%] bg-gradient-to-r from-[#ff4b2b] to-[#ff416c] text-white transition-transform duration-700 ease-in-out"
+        >
+          <div
+            id="overlayLeft"
+            class="absolute inset-y-0 left-0 w-1/2 flex flex-col items-center justify-center text-center px-10 -translate-x-[20%] opacity-0 transition-all duration-700 ease-in-out"
+          >
+            <h1 class="text-2xl font-bold mb-3">Chào mừng trở lại!</h1>
+            <p class="text-sm leading-relaxed">
+              Để duy trì kết nối với chúng tôi, vui lòng đăng nhập bằng thông tin cá nhân của bạn
+            </p>
+            <button
+              id="signIn"
+              type="button"
+              class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
+            >
+              Đăng Nhập
+            </button>
+          </div>
+          <div
+            id="overlayRight"
+            class="absolute inset-y-0 right-0 w-1/2 flex flex-col items-center justify-center text-center px-10 transition-all duration-700 ease-in-out"
+          >
+            <h1 class="text-2xl font-bold mb-3">Xin chào, Bạn!</h1>
+            <p class="text-sm leading-relaxed">
+              Nhập thông tin cá nhân của bạn và bắt đầu hành trình với chúng tôi
+            </p>
+            <button
+              id="signUp"
+              type="button"
+              class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
+            >
+              Đăng Ký
+            </button>
+          </div>
         </div>
-
-        <div class="right-panel">
-            <div class="form-wrapper">
-                <h1 class="brand-logo">SHOPPING</h1>
-                
-                <p class="subtitle">Express login via Google and Facebook</p>
-                
-                <div class="social-buttons">
-                    <button class="social-btn google">
-                        <i class="fab fa-google"></i> Google
-                    </button>
-                    <button class="social-btn facebook">
-                        <i class="fab fa-facebook-f"></i> Facebook
-                    </button>
-                </div>
-
-                <hr class="divider">
-
-                <div class="auth-tabs">
-                    <span class="tab active">Log in</span>
-                    <span class="tab inactive">Sign up</span>
-                </div>
-
-                <form th:action="@{/api/auth/login}" method="post">
-                    <div class="input-group">
-                        <input type="text" name="username" placeholder="email or username" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="password" name="password" placeholder="password" required>
-                    </div>
-
-                    <button type="submit" class="login-btn">Log in</button>
-                </form>
-
-                <a href="#" class="forgot-pass">Forgot password?</a>
-
-                <div class="alert-box">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Looking for the old Rive?</span>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-
-</body>
+  </body>
 </html>
