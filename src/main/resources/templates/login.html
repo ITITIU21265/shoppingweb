@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sliding Login/Signup Form</title>
+    <title>Login/Signup</title>
     <link rel="stylesheet" href="/css/style.css" />
     <link
       rel="stylesheet"
@@ -25,7 +25,7 @@
         class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out z-20"
       >
         <form id="login-form" class="w-full px-12 flex flex-col items-center text-center">
-          <h1 class="text-2xl font-bold mb-2">Đăng Nhập</h1>
+          <h1 class="text-2xl font-bold mb-2">Sign In</h1>
           <div class="flex gap-2 my-4">
             <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
               <i class="fab fa-facebook-f"></i>
@@ -37,25 +37,25 @@
               <i class="fab fa-linkedin-in"></i>
             </a>
           </div>
-          <span class="text-xs text-gray-500 mb-4">hoặc sử dụng tài khoản của bạn</span>
+          <span class="text-xs text-gray-500 mb-4">or use your account</span>
           <input
             id="login-identifier"
             class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
             type="text"
-            placeholder="Email hoặc Username"
+            placeholder="Email or Username"
           />
           <input
             id="login-password"
             class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
             type="password"
-            placeholder="Mật khẩu"
+            placeholder="password"
           />
-          <a class="text-sm text-gray-600 my-3" href="#">Quên mật khẩu?</a>
+          <a class="text-sm text-gray-600 my-3" href="#">forgot password?</a>
           <button
             type="submit"
             class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
           >
-            Đăng Nhập
+            sign Up
           </button>
         </form>
       </div>
@@ -65,7 +65,7 @@
         class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out opacity-0 z-10"
       >
         <form id="signup-form" class="w-full px-12 flex flex-col items-center text-center">
-          <h1 class="text-2xl font-bold mb-2">Tạo tài khoản</h1>
+          <h1 class="text-2xl font-bold mb-2">Create Account</h1>
           <div class="flex gap-2 my-4">
             <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
               <i class="fab fa-facebook-f"></i>
@@ -77,12 +77,12 @@
               <i class="fab fa-linkedin-in"></i>
             </a>
           </div>
-          <span class="text-xs text-gray-500 mb-4">hoặc sử dụng email để đăng ký</span>
+          <span class="text-xs text-gray-500 mb-4">or use email to register</span>
           <input
             id="signup-fullname"
             class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
             type="text"
-            placeholder="Họ và tên"
+            placeholder="Full Name"
           />
           <input
             id="signup-username"
@@ -106,7 +106,7 @@
             type="submit"
             class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
           >
-            Đăng Ký
+            Sign Up
           </button>
         </form>
       </div>
@@ -123,32 +123,32 @@
             id="overlayLeft"
             class="absolute inset-y-0 left-0 w-1/2 flex flex-col items-center justify-center text-center px-10 -translate-x-[20%] opacity-0 transition-all duration-700 ease-in-out"
           >
-            <h1 class="text-2xl font-bold mb-3">Chào mừng trở lại!</h1>
+            <h1 class="text-2xl font-bold mb-3">Welcome back!</h1>
             <p class="text-sm leading-relaxed">
-              Để duy trì kết nối với chúng tôi, vui lòng đăng nhập bằng thông tin cá nhân của bạn
+                To keep connected with us, please login with your personal info
             </p>
             <button
               id="signIn"
               type="button"
               class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
             >
-              Đăng Nhập
+              Sign In
             </button>
           </div>
           <div
             id="overlayRight"
             class="absolute inset-y-0 right-0 w-1/2 flex flex-col items-center justify-center text-center px-10 transition-all duration-700 ease-in-out"
           >
-            <h1 class="text-2xl font-bold mb-3">Xin chào, Bạn!</h1>
+            <h1 class="text-2xl font-bold mb-3">Hello, You!</h1>
             <p class="text-sm leading-relaxed">
-              Nhập thông tin cá nhân của bạn và bắt đầu hành trình với chúng tôi
+              Enter your personal information and start your journey with us
             </p>
             <button
               id="signUp"
               type="button"
               class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
             >
-              Đăng Ký
+              Sign Up
             </button>
           </div>
         </div>

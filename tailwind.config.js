@@ -2,20 +2,19 @@
 module.exports = {
   content: [
     "./src/main/resources/templates/**/*.html",
-    "./src/main/resources/static/js/**/*.js",
+    "./src/main/resources/static/js/**/*.js"
   ],
   theme: {
     extend: {
-      fontFamily: {
-        display: ['"Montserrat"', "sans-serif"],
-      },
       colors: {
-        primary: "#ff4b2b",
+        primary: "#197fe6",
+        "background-light": "#f6f7f8",
+        "background-dark": "#111921"
       },
-      boxShadow: {
-        auth: "0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22)",
-      },
-    },
+      fontFamily: {
+        display: ["\"Plus Jakarta Sans\"", "sans-serif"]
+      }
+    }
   },
-  plugins: [require("@tailwindcss/forms")],
-};
+  plugins: [require("@tailwindcss/forms"), require("@tailwindcss/container-queries")]
+}
