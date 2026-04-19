@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StyleHub Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Profile Overview</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a class="is-active" href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <span class="user-chip" th:text="${#strings.substring(profileUser.fullName ?: profileUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Member area</p>
+          <h1 th:text="'Welcome back, ' + ${profileUser.fullName} + '!'">Welcome back</h1>
+          <p>Use this page as the customer-facing summary while account changes stay in the dashboard.</p>
+        </div>
+      </section>
+
+      <section class="profile-overview-grid">
+        <article class="panel-card profile-card">
+          <div class="avatar-circle large" th:text="${#strings.substring(profileUser.fullName ?: profileUser.username, 0, 1)}">U</div>
+          <h2 th:text="${profileUser.fullName}">User</h2>
+          <p th:text="'@' + ${profileUser.username}">@username</p>
+          <dl class="info-list">
+            <div><dt>Email</dt><dd th:text="${profileUser.email}">-</dd></div>
+            <div><dt>Role</dt><dd th:text="${profileUser.role}">-</dd></div>
+            <div><dt>Status</dt><dd th:text="${profileUser.status}">-</dd></div>
+          </dl>
+        </article>
+
+        <section class="quick-actions-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Get started</p>
+              <h2>Quick Actions</h2>
+            </div>
+          </div>
+
+          <div class="quick-actions-grid">
+            <a class="action-tile" href="/catalog">
+              <h3>Browse Catalog</h3>
+              <p>Explore the database-backed clothing catalog and open product detail pages.</p>
+            </a>
+            <a class="action-tile" href="/dashboard">
+              <h3>Open Dashboard</h3>
+              <p>Edit profile fields, change password, and manage account settings from the server-rendered dashboard.</p>
+            </a>
+            <a th:if="${profileUser.role == 'ADMIN'}" class="action-tile" href="/admin/users">
+              <h3>Manage Users</h3>
+              <p>Review account status and roles from the MVC admin page.</p>
+            </a>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

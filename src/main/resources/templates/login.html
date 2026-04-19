@@ -1,158 +1,97 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login/Signup</title>
+    <title>StyleHub Auth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/css/style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css?family=Montserrat:400,800&display=swap"
-    />
-    <script src="/js/login.js" defer></script>
   </head>
-  <body class="min-h-screen bg-[#f6f5f7] font-display flex items-center justify-center">
-    <div
-      id="container"
-      class="relative w-[768px] max-w-full min-h-[480px] bg-white rounded-[10px] shadow-auth overflow-hidden"
-    >
-      <div
-        id="signInPanel"
-        class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out z-20"
-      >
-        <form id="login-form" class="w-full px-12 flex flex-col items-center text-center">
-          <h1 class="text-2xl font-bold mb-2">Sign In</h1>
-          <div class="flex gap-2 my-4">
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-facebook-f"></i>
-            </a>
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-google-plus-g"></i>
-            </a>
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-linkedin-in"></i>
-            </a>
-          </div>
-          <span class="text-xs text-gray-500 mb-4">or use your account</span>
-          <input
-            id="login-identifier"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="text"
-            placeholder="Email or Username"
-          />
-          <input
-            id="login-password"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="password"
-            placeholder="password"
-          />
-          <a class="text-sm text-gray-600 my-3" href="#">forgot password?</a>
-          <button
-            type="submit"
-            class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
-          >
-            sign Up
-          </button>
-        </form>
-      </div>
-
-      <div
-        id="signUpPanel"
-        class="absolute inset-y-0 left-0 w-1/2 flex items-center justify-center transition-all duration-700 ease-in-out opacity-0 z-10"
-      >
-        <form id="signup-form" class="w-full px-12 flex flex-col items-center text-center">
-          <h1 class="text-2xl font-bold mb-2">Create Account</h1>
-          <div class="flex gap-2 my-4">
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-facebook-f"></i>
-            </a>
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-google-plus-g"></i>
-            </a>
-            <a class="h-10 w-10 border border-[#ddd] rounded-full flex items-center justify-center" href="#">
-              <i class="fab fa-linkedin-in"></i>
-            </a>
-          </div>
-          <span class="text-xs text-gray-500 mb-4">or use email to register</span>
-          <input
-            id="signup-fullname"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="text"
-            placeholder="Full Name"
-          />
-          <input
-            id="signup-username"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="text"
-            placeholder="Username"
-          />
-          <input
-            id="signup-email"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="email"
-            placeholder="Email"
-          />
-          <input
-            id="signup-password"
-            class="w-full bg-[#eee] border-none px-4 py-3 mb-2"
-            type="password"
-            placeholder="Mật khẩu"
-          />
-          <button
-            type="submit"
-            class="rounded-full border border-primary bg-primary text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
-          >
-            Sign Up
-          </button>
-        </form>
-      </div>
-
-      <div
-        id="overlayContainer"
-        class="absolute inset-y-0 left-1/2 w-1/2 overflow-hidden transition-transform duration-700 ease-in-out z-50"
-      >
-        <div
-          id="overlay"
-          class="relative left-[-100%] h-full w-[200%] bg-gradient-to-r from-[#ff4b2b] to-[#ff416c] text-white transition-transform duration-700 ease-in-out"
-        >
-          <div
-            id="overlayLeft"
-            class="absolute inset-y-0 left-0 w-1/2 flex flex-col items-center justify-center text-center px-10 -translate-x-[20%] opacity-0 transition-all duration-700 ease-in-out"
-          >
-            <h1 class="text-2xl font-bold mb-3">Welcome back!</h1>
-            <p class="text-sm leading-relaxed">
-                To keep connected with us, please login with your personal info
-            </p>
-            <button
-              id="signIn"
-              type="button"
-              class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
-            >
-              Sign In
-            </button>
-          </div>
-          <div
-            id="overlayRight"
-            class="absolute inset-y-0 right-0 w-1/2 flex flex-col items-center justify-center text-center px-10 transition-all duration-700 ease-in-out"
-          >
-            <h1 class="text-2xl font-bold mb-3">Hello, You!</h1>
-            <p class="text-sm leading-relaxed">
-              Enter your personal information and start your journey with us
-            </p>
-            <button
-              id="signUp"
-              type="button"
-              class="mt-6 rounded-full border border-white bg-transparent text-white text-xs font-bold px-10 py-3 uppercase tracking-wider"
-            >
-              Sign Up
-            </button>
-          </div>
+  <body class="auth-body">
+    <main class="auth-shell">
+      <section class="auth-brand">
+        <p class="eyebrow">StyleHub Clothing</p>
+        <h1>Server-rendered shopping, built the Spring MVC way.</h1>
+        <p class="lead">
+          The application now uses controller-driven pages, Thymeleaf forms, Spring Security sessions, and a real product catalog seeded from the backend.
+        </p>
+        <div class="auth-brand-panels">
+          <article>
+            <h2>Catalog-first MVC</h2>
+            <p>Products are loaded from the database instead of being hard-coded in JavaScript.</p>
+          </article>
+          <article>
+            <h2>Session-based security</h2>
+            <p>Login, registration, profile edits, password reset and admin management now follow the standard Spring MVC flow.</p>
+          </article>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <section class="auth-card">
+        <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+        <form class="auth-form" method="post" action="/auth/login">
+          <header>
+            <p class="eyebrow">Welcome back</p>
+            <h2>Sign in</h2>
+          </header>
+
+          <label class="field">
+            <span>Username or Email</span>
+            <input name="username" type="text" autocomplete="username" placeholder="you@example.com" />
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <input name="password" type="password" autocomplete="current-password" placeholder="Minimum 6 characters" />
+          </label>
+
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+          <div class="auth-actions">
+            <a href="/auth/forgot-password">Forgot password?</a>
+          </div>
+
+          <button class="btn btn-primary btn-full" type="submit">Sign In</button>
+        </form>
+
+        <form class="auth-form" method="post" th:object="${registerRequest}" action="/auth/register">
+          <header>
+            <p class="eyebrow">New to StyleHub</p>
+            <h2>Create Account</h2>
+          </header>
+
+          <label class="field">
+            <span>Full Name</span>
+            <input th:field="*{fullName}" type="text" autocomplete="name" placeholder="Your full name" />
+          </label>
+
+          <label class="field">
+            <span>Username</span>
+            <input th:field="*{username}" type="text" autocomplete="username" placeholder="Choose a username" />
+          </label>
+
+          <label class="field">
+            <span>Email</span>
+            <input th:field="*{email}" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <input th:field="*{password}" type="password" autocomplete="new-password" placeholder="At least 6 characters" />
+          </label>
+
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+          <button class="btn btn-primary btn-full" type="submit">Create Account</button>
+        </form>
+      </section>
+    </main>
   </body>
 </html>

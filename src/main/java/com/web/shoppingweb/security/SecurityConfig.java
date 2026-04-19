@@ -1,7 +1,5 @@
 package com.web.shoppingweb.security;
 
-import com.web.shoppingweb.service.CustomUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,36 +9,37 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.web.shoppingweb.service.CustomUserDetailsService;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-    
-    @Autowired
-    private JwtAuthenticationEntryPoint authenticationEntryPoint;
-    
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-    
+
+    private final CustomUserDetailsService userDetailsService;
+    private final UserStatusEnforcementFilter userStatusEnforcementFilter;
+
+    public SecurityConfig(CustomUserDetailsService userDetailsService,
+                          UserStatusEnforcementFilter userStatusEnforcementFilter) {
+        this.userDetailsService = userDetailsService;
+        this.userStatusEnforcementFilter = userStatusEnforcementFilter;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-    
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider =
@@ -52,30 +51,36 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .exceptionHandling(exception -> 
-                exception.authenticationEntryPoint(authenticationEntryPoint)
-            )
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/login").permitAll()
-                .requestMatchers("/style.css", "/stylesheet.css", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/style.css", "/stylesheet.css", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/customers/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/customers/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/customers/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/customers/**").hasRole("ADMIN")
-                // All other requests need authentication
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                .requestMatchers("/", "/catalog", "/products/**").permitAll()
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/profile", "/dashboard", "/account/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/products").hasAnyRole("ADMIN", "SELLER")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
+            )
+            .formLogin(login -> login
+                .loginPage("/auth/login")
+                .loginProcessingUrl("/auth/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/auth/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/auth/logout")
+                .logoutSuccessUrl("/auth/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+            )
+            .exceptionHandling(exception -> exception
+                .accessDeniedPage("/catalog?denied=true")
             );
-        
+
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+        http.addFilterAfter(userStatusEnforcementFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }

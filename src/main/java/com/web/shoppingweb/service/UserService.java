@@ -14,13 +14,15 @@ public interface UserService {
 
     void changePassword(String username, ChangePasswordDTO dto);
 
-    String forgotPassword(String email);
+    void forgotPassword(String email);
 
     void resetPassword(ResetPasswordDTO dto);
 
     UserResponseDTO updateProfile(String username, UpdateProfileDTO dto);
 
     void deleteAccount(String username, String password);
+
+    void logout(String username, String refreshToken);
 
     // 8.1 – list all users (admin only)
     List<UserResponseDTO> getAllUsers();

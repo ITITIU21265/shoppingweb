@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StyleHub Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">User Dashboard</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a href="/profile">Profile</a>
+        <a class="is-active" href="/dashboard">Dashboard</a>
+        <a th:if="${dashboardUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
+      </nav>
+
+      <div class="header-user">
+        <span class="user-chip" th:text="${#strings.substring(dashboardUser.fullName ?: dashboardUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="dashboard-shell">
+      <aside class="sidebar-card">
+        <div class="profile-summary">
+          <div class="avatar-circle" th:text="${#strings.substring(dashboardUser.fullName ?: dashboardUser.username, 0, 1)}">U</div>
+          <h1 th:text="${dashboardUser.fullName}">User</h1>
+          <p th:text="'@' + ${dashboardUser.username}">@username</p>
+        </div>
+
+        <div class="tab-list">
+          <a class="tab-button is-active" href="#profile">Profile</a>
+          <a class="tab-button" href="#security">Security</a>
+          <a class="tab-button" href="#account">Account</a>
+          <a th:if="${dashboardUser.role == 'ADMIN'}" class="tab-button" href="/admin/users">Admin Users</a>
+        </div>
+      </aside>
+
+      <section class="dashboard-content">
+        <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+        <section id="profile" class="panel-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Account overview</p>
+              <h2>Profile Information</h2>
+            </div>
+          </div>
+
+          <form class="two-column-form" method="post" th:object="${updateProfileForm}" action="/profile">
+            <label class="field">
+              <span>Full Name</span>
+              <input th:field="*{fullName}" type="text" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input th:field="*{email}" type="email" />
+            </label>
+            <label class="field is-readonly">
+              <span>Username</span>
+              <input th:value="${dashboardUser.username}" type="text" readonly />
+            </label>
+            <label class="field is-readonly">
+              <span>Role</span>
+              <input th:value="${dashboardUser.role}" type="text" readonly />
+            </label>
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="form-footer">
+              <button class="btn btn-primary" type="submit">Save Profile</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="security" class="panel-card">
+          <div class="settings-stack">
+            <div>
+              <p class="eyebrow">Security</p>
+              <h2>Change Password</h2>
+            </div>
+
+            <form class="settings-form" method="post" th:object="${changePasswordForm}" action="/dashboard/password">
+              <label class="field">
+                <span>Current Password</span>
+                <input th:field="*{currentPassword}" type="password" />
+              </label>
+              <label class="field">
+                <span>New Password</span>
+                <input th:field="*{newPassword}" type="password" />
+              </label>
+              <label class="field">
+                <span>Confirm Password</span>
+                <input th:field="*{confirmPassword}" type="password" />
+              </label>
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button class="btn btn-primary" type="submit">Change Password</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="account" class="panel-card">
+          <div class="danger-zone">
+            <div>
+              <h3>Deactivate Account</h3>
+              <p>Mark this account as deleted and immediately end the current session.</p>
+            </div>
+            <form class="inline-form" method="post" th:object="${deleteAccountForm}" action="/account/delete">
+              <input th:field="*{password}" type="password" placeholder="Confirm with password" />
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button class="btn btn-danger" type="submit">Delete Account</button>
+            </form>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

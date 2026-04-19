@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StyleHub Catalog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Clothing Catalog</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a class="is-active" href="/catalog">Catalog</a>
+        <a th:if="${signedIn}" href="/profile">Profile</a>
+        <a th:if="${signedIn}" href="/dashboard">Dashboard</a>
+        <a th:if="${currentUser != null and currentUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
+      </nav>
+
+      <div class="header-user">
+        <span th:if="${currentUser != null}" class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <a th:if="${!signedIn}" class="btn btn-primary" href="/auth/login">Sign In</a>
+        <form th:if="${signedIn}" method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Season spotlight</p>
+          <h1>Browse a real backend catalog in a Spring MVC product structure.</h1>
+          <p>
+            Products now come from the database, routes are controller-driven, and account flows use server-rendered forms instead of client-only JavaScript state.
+          </p>
+        </div>
+        <div class="hero-badge">
+          <span>Database-backed</span>
+          <strong th:text="${#lists.size(products)} + ' products'">0 products</strong>
+        </div>
+      </section>
+
+      <div th:if="${param.denied}" class="form-alert">You do not have permission to access that page.</div>
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+      <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+      <section class="toolbar">
+        <div class="filter-pills">
+          <a class="pill" th:classappend="${selectedCategory == null} ? ' is-active'" href="/catalog">All</a>
+          <a
+            th:each="category : ${categories}"
+            class="pill"
+            th:classappend="${selectedCategory == category} ? ' is-active'"
+            th:href="@{/catalog(category=${category.name()})}"
+            th:text="${category.displayName}">
+            Category
+          </a>
+        </div>
+      </section>
+
+      <section th:if="${canManageProducts}" class="panel-card">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Seller tools</p>
+            <h2>Add New Product</h2>
+          </div>
+        </div>
+
+        <form class="two-column-form" method="post" th:object="${productForm}" action="/products">
+          <label class="field">
+            <span>Product Name</span>
+            <input th:field="*{name}" type="text" placeholder="Classic White T-Shirt" />
+          </label>
+          <label class="field">
+            <span>Price</span>
+            <input th:field="*{price}" type="number" min="0.01" step="0.01" placeholder="29.99" />
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <select th:field="*{category}">
+              <option value="">Select category</option>
+              <option th:each="category : ${categories}" th:value="${category.name()}" th:text="${category.displayName}"></option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Image URL</span>
+            <input th:field="*{imageUrl}" type="url" placeholder="https://example.com/image.jpg" />
+          </label>
+          <label class="field" style="grid-column: 1 / -1;">
+            <span>Description</span>
+            <input th:field="*{description}" type="text" placeholder="Describe the product briefly" />
+          </label>
+          <label class="field" style="grid-column: 1 / -1;">
+            <span>
+              <input th:field="*{featured}" type="checkbox" style="width:auto; margin-right:8px;" />
+              Featured Product
+            </span>
+          </label>
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="form-footer">
+            <button class="btn btn-primary" type="submit">Create Product</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="product-grid">
+        <article th:each="product : ${products}" class="product-card">
+          <a th:href="@{/products/{slug}(slug=${product.slug})}">
+            <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+          </a>
+          <div class="product-content">
+            <p class="product-meta">
+              <span th:text="${product.category.displayName}">Category</span>
+              <span th:if="${product.featured}"> • Featured</span>
+            </p>
+            <h2 class="product-title" th:text="${product.name}">Product Name</h2>
+            <p class="lead" th:text="${product.description}">Description</p>
+            <div class="product-footer">
+              <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+              <a class="btn btn-primary" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

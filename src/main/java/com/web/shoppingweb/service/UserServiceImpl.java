@@ -1,21 +1,22 @@
 package com.web.shoppingweb.service;
 
 import com.web.shoppingweb.dto.*;
+import com.web.shoppingweb.entity.PasswordResetToken;
 import com.web.shoppingweb.entity.RefreshToken;
 import com.web.shoppingweb.entity.Role;
 import com.web.shoppingweb.entity.User;
 import com.web.shoppingweb.entity.UserStatus;
 import com.web.shoppingweb.exception.DuplicateResourceException;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
+import com.web.shoppingweb.repository.PasswordResetTokenRepository;
 import com.web.shoppingweb.repository.RefreshTokenRepository;
 import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 import com.web.shoppingweb.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +40,9 @@ public class UserServiceImpl implements UserService {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
     private RoleRepository roleRepository;
 
     @Autowired
@@ -51,10 +54,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     private static final long REFRESH_TOKEN_DAYS = 7L;
+    private static final long RESET_TOKEN_HOURS = 1L;
 
     //LOGIN + REFRESH TOKEN (Exercise 9.2)
     @Override
@@ -77,14 +78,11 @@ public class UserServiceImpl implements UserService {
         String identifier = loginRequest.getUsername();
         User user = userRepository.findByEmailOrUsername(identifier, identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        ensureActive(user);
 
-        // 4. Create refresh token (valid 7 days)
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUser(user);
-        refreshToken.setToken(UUID.randomUUID().toString());
-        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(REFRESH_TOKEN_DAYS));
-
-        refreshTokenRepository.save(refreshToken);
+        // 4. Keep a single active refresh token per user in the current project scope
+        revokeAllRefreshTokens(user);
+        RefreshToken refreshToken = createRefreshToken(user);
 
         // 5. Return both tokens
         return new LoginResponseDTO(
@@ -99,22 +97,30 @@ public class UserServiceImpl implements UserService {
     //REGISTER
     @Override
     public UserResponseDTO register(RegisterRequestDTO registerRequest) {
-        // Check if username exists
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
+        String username = registerRequest.getUsername().trim();
+        String email = registerRequest.getEmail().trim();
+
+        if (userRepository.existsByUsername(username)) {
             throw new DuplicateResourceException("Username already exists");
         }
 
-        // Check if email exists
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+        if (userRepository.existsByEmail(email)) {
             throw new DuplicateResourceException("Email already exists");
         }
 
-        // Create new user
+        if (userRepository.findByEmail(username).isPresent()) {
+            throw new DuplicateResourceException("Username must not match an existing email");
+        }
+
+        if (userRepository.findByUsername(email).isPresent()) {
+            throw new DuplicateResourceException("Email must not match an existing username");
+        }
+
         User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
+        user.setUsername(username);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setFullName(registerRequest.getFullName());
+        user.setFullName(registerRequest.getFullName().trim());
         user.setRoles(java.util.Set.of(getRoleByCode("CUSTOMER")));
         user.setStatus(UserStatus.ACTIVE);
 
@@ -128,6 +134,7 @@ public class UserServiceImpl implements UserService {
     public void changePassword(String username, ChangePasswordDTO dto) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        ensureActive(user);
 
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
             throw new BadCredentialsException("Current password is incorrect");
@@ -139,51 +146,42 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
+        revokeAllRefreshTokens(user);
     }
 
     //FORGOT / RESET PASSWORD (Exercise 6.2)
     @Override
-    public String forgotPassword(String email) {
+    public void forgotPassword(String email) {
+        userRepository.findByEmail(email)
+                .filter(user -> user.getStatus() == UserStatus.ACTIVE)
+                .ifPresent(user -> {
+                    passwordResetTokenRepository.deleteByUser(user);
+                    passwordResetTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+                    PasswordResetToken resetToken = new PasswordResetToken();
+                    resetToken.setUser(user);
+                    resetToken.setToken(UUID.randomUUID().toString());
+                    resetToken.setExpiresAt(LocalDateTime.now().plusHours(RESET_TOKEN_HOURS));
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
-
-        jdbcTemplate.update(
-                "INSERT INTO password_resets (user_id, reset_token, expires_at) VALUES (?, ?, ?)",
-                user.getId(),
-                token,
-                Timestamp.valueOf(expiresAt)
-        );
-
-        return token;
+                    passwordResetTokenRepository.save(resetToken);
+                });
     }
 
     @Override
     public void resetPassword(ResetPasswordDTO dto) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(dto.getResetToken())
+                .orElseThrow(() -> new IllegalArgumentException("Reset token is invalid"));
 
-        Long userId;
-        LocalDateTime expiresAt;
-        Timestamp usedAt;
-        try {
-            var row = jdbcTemplate.queryForMap(
-                    "SELECT user_id, expires_at, used_at FROM password_resets WHERE reset_token = ?",
-                    dto.getResetToken()
-            );
-            userId = ((Number) row.get("user_id")).longValue();
-            expiresAt = ((Timestamp) row.get("expires_at")).toLocalDateTime();
-            usedAt = (Timestamp) row.get("used_at");
-        } catch (EmptyResultDataAccessException ex) {
-            throw new ResourceNotFoundException("Invalid reset token");
+        User user = resetToken.getUser();
+        if (user == null || user.getStatus() != UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("Reset token is no longer valid");
         }
 
-        if (usedAt != null) {
+        if (resetToken.getUsedAt() != null) {
             throw new IllegalArgumentException("Reset token has already been used");
         }
 
-        if (expiresAt.isBefore(LocalDateTime.now())) {
+        if (resetToken.getExpiresAt() == null || resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Reset token has expired");
         }
 
@@ -191,16 +189,11 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
-
-        jdbcTemplate.update(
-                "UPDATE password_resets SET used_at = ? WHERE reset_token = ?",
-                Timestamp.valueOf(LocalDateTime.now()),
-                dto.getResetToken()
-        );
+        resetToken.setUsedAt(LocalDateTime.now());
+        passwordResetTokenRepository.save(resetToken);
+        revokeAllRefreshTokens(user);
     }
 
     //ADMIN FEATURES (Exercise 8)
@@ -230,6 +223,7 @@ public class UserServiceImpl implements UserService {
 
         if (user.getStatus() == UserStatus.ACTIVE) {
             user.setStatus(UserStatus.BLOCKED);
+            revokeAllRefreshTokens(user);
         } else {
             user.setStatus(UserStatus.ACTIVE);
         }
@@ -243,15 +237,24 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO updateProfile(String username, UpdateProfileDTO dto) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        ensureActive(user);
         if (dto.getEmail() != null &&
                 !dto.getEmail().equalsIgnoreCase(user.getEmail()) &&
                 userRepository.existsByEmail(dto.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
         }
 
-        user.setFullName(dto.getFullName());
+        if (dto.getEmail() != null
+                && !dto.getEmail().isBlank()
+                && userRepository.findByUsername(dto.getEmail().trim())
+                    .filter(other -> !other.getId().equals(user.getId()))
+                    .isPresent()) {
+            throw new DuplicateResourceException("Email must not match an existing username");
+        }
+
+        user.setFullName(dto.getFullName().trim());
         if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            user.setEmail(dto.getEmail());
+            user.setEmail(dto.getEmail().trim());
         }
 
         User saved = userRepository.save(user);
@@ -262,6 +265,7 @@ public class UserServiceImpl implements UserService {
     public void deleteAccount(String username, String password) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        ensureActive(user);
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadCredentialsException("Password is incorrect");
@@ -270,26 +274,46 @@ public class UserServiceImpl implements UserService {
         // Soft delete
         user.setStatus(UserStatus.DELETED);
         userRepository.save(user);
+        revokeAllRefreshTokens(user);
+    }
+
+    @Override
+    public void logout(String username, String refreshToken) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        RefreshToken storedToken = refreshTokenRepository.findByTokenAndUser(refreshToken, user)
+                .orElseThrow(() -> new BadCredentialsException("Refresh token is invalid"));
+
+        refreshTokenRepository.delete(storedToken);
     }
 
     //REFRESH TOKEN (Exercise 9.3)
     @Override
     public LoginResponseDTO refreshToken(String refreshTokenStr) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenStr)
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid refresh token"));
+                .orElseThrow(() -> new BadCredentialsException("Refresh token is invalid"));
 
         if (refreshToken.getExpiryDate() == null ||
                 refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Refresh token has expired");
+            refreshTokenRepository.delete(refreshToken);
+            throw new BadCredentialsException("Refresh token has expired");
         }
 
         User user = refreshToken.getUser();
+        if (user == null) {
+            refreshTokenRepository.delete(refreshToken);
+            throw new BadCredentialsException("Refresh token is invalid");
+        }
+        ensureActive(user);
 
         String newAccessToken = tokenProvider.generateTokenFromUsername(user.getUsername());
+        refreshTokenRepository.delete(refreshToken);
+        RefreshToken rotatedToken = createRefreshToken(user);
 
         return new LoginResponseDTO(
                 newAccessToken,
-                refreshTokenStr,
+                rotatedToken.getToken(),
                 user.getUsername(),
                 user.getEmail(),
                 getPrimaryRoleCode(user)
@@ -301,6 +325,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        ensureActive(user);
 
         return convertToDTO(user);
     }
@@ -334,5 +359,24 @@ public class UserServiceImpl implements UserService {
             }
         }
         return user.getRoles().iterator().next().getCode();
+    }
+
+    private RefreshToken createRefreshToken(User user) {
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setUser(user);
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(REFRESH_TOKEN_DAYS));
+        return refreshTokenRepository.save(refreshToken);
+    }
+
+    private void revokeAllRefreshTokens(User user) {
+        refreshTokenRepository.deleteAllByUserValue(user);
+    }
+
+    private void ensureActive(User user) {
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            revokeAllRefreshTokens(user);
+            throw new DisabledException("Account is no longer active");
+        }
     }
 }

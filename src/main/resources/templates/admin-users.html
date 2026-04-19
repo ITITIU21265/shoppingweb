@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StyleHub Admin Users</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Admin Users</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a href="/dashboard">Dashboard</a>
+        <a class="is-active" href="/admin/users">Admin Users</a>
+      </nav>
+
+      <div class="header-user">
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">A</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Administration</p>
+          <h1>Manage roles and account status from the MVC admin console.</h1>
+          <p>Each action posts back to Spring controllers and redirects with flash messages instead of relying on client-side fetch requests.</p>
+        </div>
+      </section>
+
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+      <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+      <section class="panel-card">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Role Action</th>
+                <th>Status Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="user : ${users}">
+                <td th:text="${user.id}">1</td>
+                <td>
+                  <strong th:text="${user.fullName}">Full Name</strong>
+                  <div class="product-meta" th:text="'@' + ${user.username}">@username</div>
+                </td>
+                <td th:text="${user.email}">email@example.com</td>
+                <td th:text="${user.role}">CUSTOMER</td>
+                <td th:text="${user.status}">ACTIVE</td>
+                <td>
+                  <form method="post" th:action="@{/admin/users/{id}/role(id=${user.id})}">
+                    <select name="roleCode">
+                      <option value="CUSTOMER">CUSTOMER</option>
+                      <option value="SELLER">SELLER</option>
+                      <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button class="btn btn-primary" type="submit">Update</button>
+                  </form>
+                </td>
+                <td>
+                  <form method="post" th:action="@{/admin/users/{id}/status(id=${user.id})}">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button class="btn btn-ghost" type="submit">Toggle</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -32,12 +32,19 @@
 @SET __MVNW_ERROR__=
 @SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
 @SET PSModulePath=
+@IF NOT "%JAVA_HOME%"=="" IF EXIST "%JAVA_HOME%\bin\java.exe" GOTO javaHomeReady
+@FOR %%I IN (java.exe) DO @SET __MVNW_JAVA_EXE__=%%~$PATH:I
+@IF NOT "%__MVNW_JAVA_EXE__%"=="" (
+  @FOR %%I IN ("%__MVNW_JAVA_EXE__%") DO @SET "JAVA_HOME=%%~dpI.."
+)
+:javaHomeReady
 @FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
   IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
 )
 @SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
 @SET __MVNW_PSMODULEP_SAVE=
 @SET __MVNW_ARG0_NAME__=
+@SET __MVNW_JAVA_EXE__=
 @SET MVNW_USERNAME=
 @SET MVNW_PASSWORD=
 @IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
@@ -89,10 +96,19 @@ if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
 }
 
 $MAVEN_WRAPPER_DISTS = $null
-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+$mavenM2Item = Get-Item $MAVEN_M2_PATH
+$mavenM2Target = $null
+if ($mavenM2Item -and $mavenM2Item.LinkType) {
+  $targets = @($mavenM2Item.Target)
+  if ($targets.Count -gt 0) {
+    $mavenM2Target = $targets[0]
+  }
+}
+
+if ([string]::IsNullOrEmpty($mavenM2Target)) {
   $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
 } else {
-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+  $MAVEN_WRAPPER_DISTS = "$mavenM2Target/wrapper/dists"
 }
 
 $MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
