@@ -62,12 +62,11 @@
 
         <div class="auth-stage">
           <section
+            th:if="${activeTab == 'signin'}"
             class="auth-panel"
             id="signin-panel"
-            data-auth-panel="signin"
             role="tabpanel"
-            aria-labelledby="signin-tab"
-            th:attr="aria-hidden=${activeTab != 'signin'}, inert=${activeTab != 'signin'} ? 'inert' : null">
+            aria-labelledby="signin-tab">
             <form class="auth-form" method="post" action="/auth/login">
               <header>
                 <p class="eyebrow">Welcome back</p>
@@ -100,12 +99,11 @@
           </section>
 
           <section
+            th:if="${activeTab == 'signup'}"
             class="auth-panel"
             id="signup-panel"
-            data-auth-panel="signup"
             role="tabpanel"
-            aria-labelledby="signup-tab"
-            th:attr="aria-hidden=${activeTab != 'signup'}, inert=${activeTab != 'signup'} ? 'inert' : null">
+            aria-labelledby="signup-tab">
             <form class="auth-form" method="post" th:object="${registerRequest}" action="/auth/register">
               <header>
                 <p class="eyebrow">New to StyleHub</p>

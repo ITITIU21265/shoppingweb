@@ -104,15 +104,24 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public String forgotPassword(@Valid @ModelAttribute("forgotPasswordRequest") ForgotPasswordDTO dto,
                                  BindingResult bindingResult,
-                                 Model model) {
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("errorMessage", "Please provide a valid email address.");
             return "forgot-password";
         }
 
-        userService.forgotPassword(dto.getEmail());
-        model.addAttribute("successMessage", "If the email exists, reset instructions have been generated.");
-        return "forgot-password";
+        try {
+            userService.forgotPassword(dto.getEmail());
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "If the email exists, a 6-digit OTP has been sent. It expires in 15 minutes."
+            );
+            return "redirect:/auth/reset-password";
+        } catch (RuntimeException ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "forgot-password";
+        }
     }
 
     @GetMapping("/reset-password")
@@ -131,7 +140,7 @@ public class AuthController {
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("errorMessage", "Please correct the reset password form.");
+            model.addAttribute("errorMessage", "Please enter the 6-digit OTP and a valid new password.");
             return "reset-password";
         }
 

@@ -1,11 +1,13 @@
 package com.web.shoppingweb.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class ResetPasswordDTO {
 
-    @NotBlank
+    @NotBlank(message = "OTP is required")
+    @Pattern(regexp = "\\d{6}", message = "OTP must be 6 digits")
     private String resetToken;
 
     @NotBlank

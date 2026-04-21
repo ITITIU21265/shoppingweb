@@ -14,6 +14,10 @@ import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 import com.web.shoppingweb.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -24,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -54,8 +59,16 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Value("${spring.mail.username:}")
+    private String mailFromAddress;
+
+    private final SecureRandom secureRandom = new SecureRandom();
+
     private static final long REFRESH_TOKEN_DAYS = 7L;
-    private static final long RESET_TOKEN_HOURS = 1L;
+    private static final long RESET_TOKEN_MINUTES = 15L;
 
     //LOGIN + REFRESH TOKEN (Exercise 9.2)
     @Override
@@ -152,7 +165,8 @@ public class UserServiceImpl implements UserService {
     //FORGOT / RESET PASSWORD (Exercise 6.2)
     @Override
     public void forgotPassword(String email) {
-        userRepository.findByEmail(email)
+        String normalizedEmail = email == null ? "" : email.trim();
+        userRepository.findByEmail(normalizedEmail)
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .ifPresent(user -> {
                     passwordResetTokenRepository.deleteByUser(user);
@@ -160,29 +174,36 @@ public class UserServiceImpl implements UserService {
 
                     PasswordResetToken resetToken = new PasswordResetToken();
                     resetToken.setUser(user);
-                    resetToken.setToken(UUID.randomUUID().toString());
-                    resetToken.setExpiresAt(LocalDateTime.now().plusHours(RESET_TOKEN_HOURS));
+                    resetToken.setToken(generateResetOtp());
+                    resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(RESET_TOKEN_MINUTES));
+                    PasswordResetToken savedToken = passwordResetTokenRepository.save(resetToken);
 
-                    passwordResetTokenRepository.save(resetToken);
+                    try {
+                        sendPasswordResetOtpEmail(user, savedToken.getToken());
+                    } catch (MailException ex) {
+                        passwordResetTokenRepository.delete(savedToken);
+                        throw new IllegalStateException("Unable to send the reset OTP email right now. Please try again later.");
+                    }
                 });
     }
 
     @Override
     public void resetPassword(ResetPasswordDTO dto) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(dto.getResetToken())
-                .orElseThrow(() -> new IllegalArgumentException("Reset token is invalid"));
+        String normalizedOtp = dto.getResetToken() == null ? "" : dto.getResetToken().trim();
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(normalizedOtp)
+                .orElseThrow(() -> new IllegalArgumentException("OTP is invalid"));
 
         User user = resetToken.getUser();
         if (user == null || user.getStatus() != UserStatus.ACTIVE) {
-            throw new IllegalArgumentException("Reset token is no longer valid");
+            throw new IllegalArgumentException("OTP is no longer valid");
         }
 
         if (resetToken.getUsedAt() != null) {
-            throw new IllegalArgumentException("Reset token has already been used");
+            throw new IllegalArgumentException("OTP has already been used");
         }
 
         if (resetToken.getExpiresAt() == null || resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Reset token has expired");
+            throw new IllegalArgumentException("OTP has expired");
         }
 
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
@@ -367,6 +388,31 @@ public class UserServiceImpl implements UserService {
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setExpiryDate(LocalDateTime.now().plusDays(REFRESH_TOKEN_DAYS));
         return refreshTokenRepository.save(refreshToken);
+    }
+
+    private String generateResetOtp() {
+        int otp = 100000 + secureRandom.nextInt(900000);
+        return String.valueOf(otp);
+    }
+
+    private void sendPasswordResetOtpEmail(User user, String otp) {
+        if (mailFromAddress == null || mailFromAddress.isBlank()) {
+            throw new IllegalStateException("Email sending is not configured. Set spring.mail.username first.");
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailFromAddress);
+        message.setTo(user.getEmail());
+        message.setSubject("StyleHub Password Reset OTP");
+        message.setText("""
+                Hello %s,
+
+                Your StyleHub password reset OTP is: %s
+
+                This OTP will expire in 15 minutes.
+                If you did not request a password reset, you can ignore this email.
+                """.formatted(user.getFullName(), otp));
+        mailSender.send(message);
     }
 
     private void revokeAllRefreshTokens(User user) {

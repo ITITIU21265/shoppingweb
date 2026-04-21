@@ -198,52 +198,14 @@ p {
 }
 
 .auth-stage {
-  position: relative;
-  min-height: 520px;
+  display: grid;
+  align-items: start;
   margin-block: auto;
-  overflow: hidden;
-  transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .auth-panel {
-  position: absolute;
-  inset: 0;
   display: grid;
   align-content: start;
-  transition:
-    opacity 0.35s ease,
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.35s ease,
-    visibility 0.35s ease;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  filter: blur(4px);
-}
-
-.auth-card[data-active-tab="signin"] .auth-panel[data-auth-panel="signin"],
-.auth-card[data-active-tab="signup"] .auth-panel[data-auth-panel="signup"] {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateX(0) scale(1);
-  filter: blur(0);
-}
-
-.auth-card[data-active-tab="signin"] .auth-panel[data-auth-panel="signin"] {
-  z-index: 2;
-}
-
-.auth-card[data-active-tab="signup"] .auth-panel[data-auth-panel="signup"] {
-  z-index: 2;
-}
-
-.auth-card[data-active-tab="signin"] .auth-panel[data-auth-panel="signup"] {
-  transform: translateX(56px) scale(0.98);
-}
-
-.auth-card[data-active-tab="signup"] .auth-panel[data-auth-panel="signin"] {
-  transform: translateX(-56px) scale(0.98);
 }
 
 .auth-form {
@@ -1391,16 +1353,8 @@ p {
     text-align: left;
   }
 
-  .auth-card[data-active-tab="signin"] .auth-panel[data-auth-panel="signup"] {
-    transform: translateY(36px) scale(0.98);
-  }
-
-  .auth-card[data-active-tab="signup"] .auth-panel[data-auth-panel="signin"] {
-    transform: translateY(-36px) scale(0.98);
-  }
-
   .auth-stage {
-    min-height: 620px;
+    margin-block: 0;
   }
 
   .hero-card {

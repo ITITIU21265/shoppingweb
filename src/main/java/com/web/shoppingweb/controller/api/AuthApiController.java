@@ -47,7 +47,7 @@ public class AuthApiController {
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto) {
         userService.forgotPassword(dto.getEmail());
-        return ResponseEntity.ok(Map.of("message", "If the email exists, reset instructions have been generated"));
+        return ResponseEntity.ok(Map.of("message", "If the email exists, a 6-digit OTP has been sent and will expire in 15 minutes"));
     }
 
     @PostMapping("/reset-password")
