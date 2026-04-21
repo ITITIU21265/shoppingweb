@@ -24,11 +24,16 @@
 
       <nav class="main-nav">
         <a class="is-active" href="/catalog">Catalog</a>
-        <a th:if="${signedIn}" href="/saved">Saved</a>
+        <a th:if="${signedIn}" href="/orders">Orders</a>
+        <a th:if="${signedIn}" href="/profile">Profile</a>
         <a th:if="${signedIn}" href="/dashboard">Dashboard</a>
       </nav>
 
       <div class="header-user">
+        <a th:if="${signedIn}" class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a th:if="${signedIn}" class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>

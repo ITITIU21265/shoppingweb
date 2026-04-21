@@ -24,13 +24,17 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/saved">Saved</a>
+        <a href="/orders">Orders</a>
         <a href="/profile">Profile</a>
         <a class="is-active" href="/dashboard">Dashboard</a>
         <a th:if="${dashboardUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
 
       <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>

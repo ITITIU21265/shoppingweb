@@ -2,7 +2,9 @@ package com.web.shoppingweb.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +55,30 @@ public class CartServiceImpl implements CartService {
         return cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)
                 .map(this::buildSummary)
                 .orElseGet(CartSummaryDTO::new);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartSummaryDTO getSelectedCart(String username, List<Long> variantIds) {
+        Set<Long> selectedVariantIds = normalizeVariantIds(variantIds);
+        if (selectedVariantIds.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one item to checkout.");
+        }
+
+        User user = getUser(username);
+        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("Your cart is empty."));
+
+        List<CartItemResponseDTO> selectedItems = cartItemRepository.findByCartOrderByCreatedAtAsc(cart).stream()
+                .map(this::toItemResponse)
+                .filter(item -> selectedVariantIds.contains(item.getVariantId()))
+                .toList();
+
+        if (selectedItems.isEmpty() || selectedItems.size() != selectedVariantIds.size()) {
+            throw new IllegalArgumentException("Some selected items are no longer available in your cart.");
+        }
+
+        return buildSummary(selectedItems);
     }
 
     @Override
@@ -157,7 +183,10 @@ public class CartServiceImpl implements CartService {
         List<CartItemResponseDTO> items = cartItemRepository.findByCartOrderByCreatedAtAsc(cart).stream()
                 .map(this::toItemResponse)
                 .toList();
+        return buildSummary(items);
+    }
 
+    private CartSummaryDTO buildSummary(List<CartItemResponseDTO> items) {
         long totalQuantity = items.stream()
                 .mapToLong(CartItemResponseDTO::getQuantity)
                 .sum();
@@ -167,6 +196,15 @@ public class CartServiceImpl implements CartService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new CartSummaryDTO(items, totalQuantity, subtotal);
+    }
+
+    private Set<Long> normalizeVariantIds(List<Long> variantIds) {
+        if (variantIds == null) {
+            return java.util.Collections.emptySet();
+        }
+        return new LinkedHashSet<>(variantIds.stream()
+                .filter(java.util.Objects::nonNull)
+                .toList());
     }
 
     private CartItemResponseDTO toItemResponse(CartItem cartItem) {

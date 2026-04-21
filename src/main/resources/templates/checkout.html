@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Checkout</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a href="/orders">Orders</a>
+        <a href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
+        <a class="header-shortcut is-active" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Checkout</p>
+          <h1>Confirm your delivery address and place the order.</h1>
+          <p>Review only the items you selected from the cart, then submit this checkout without affecting the rest of the cart.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Ready to confirm</span>
+          <strong th:text="${cartSummary.totalQuantity} + ' items'">0 items</strong>
+        </div>
+      </section>
+
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+
+      <section class="checkout-layout">
+        <div class="checkout-stack">
+          <section class="panel-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Items</p>
+                <h2>Order Review</h2>
+              </div>
+            </div>
+
+            <div class="checkout-item-list">
+              <article th:each="item : ${cartSummary.items}" class="checkout-item-card">
+                <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
+                  <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+                </a>
+                <div class="checkout-item-copy">
+                  <h3 th:text="${item.productName}">Product Name</h3>
+                  <p class="product-meta" th:text="'Quantity: ' + ${item.quantity}">Quantity: 1</p>
+                  <p class="product-meta" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+                </div>
+                <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Shipping</p>
+                <h2>Delivery Address</h2>
+              </div>
+            </div>
+
+            <form class="checkout-form" method="post" th:action="@{/checkout}" th:object="${checkoutForm}">
+              <input th:each="selectedVariantId : ${checkoutForm.selectedVariantIds}" type="hidden" name="selectedVariantIds" th:value="${selectedVariantId}" />
+              <label class="field is-readonly">
+                <span>Customer name</span>
+                <input type="text" th:value="${currentUser.fullName}" readonly />
+              </label>
+              <label class="field is-readonly">
+                <span>Email</span>
+                <input type="email" th:value="${currentUser.email}" readonly />
+              </label>
+              <label class="field checkout-address-field">
+                <span>Shipping address</span>
+                <textarea th:field="*{shippingAddress}" rows="6" placeholder="Apartment, street, ward, district, city"></textarea>
+                <small th:if="${#fields.hasErrors('selectedVariantIds')}" class="field-error" th:errors="*{selectedVariantIds}"></small>
+                <small th:if="${#fields.hasErrors('shippingAddress')}" class="field-error" th:errors="*{shippingAddress}"></small>
+              </label>
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <div class="checkout-actions">
+                <a class="btn btn-outline-accent" href="/cart">Back to cart</a>
+                <button class="btn btn-primary" type="submit">Confirm Order</button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <aside class="panel-card checkout-summary-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Summary</p>
+              <h2>Payment Snapshot</h2>
+            </div>
+          </div>
+
+          <dl class="info-list">
+            <div><dt>Items</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
+            <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Status after submit</dt><dd>Confirmed</dd></div>
+          </dl>
+
+          <p class="checkout-note">Only the selected items in this checkout will be converted into an order. Other cart items remain available for later.</p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

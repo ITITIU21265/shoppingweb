@@ -24,12 +24,16 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/saved">Saved</a>
+        <a href="/orders">Orders</a>
         <a class="is-active" href="/profile">Profile</a>
         <a href="/dashboard">Dashboard</a>
       </nav>
 
       <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
@@ -79,6 +83,10 @@
             <a class="action-tile" href="/saved">
               <h3>Saved Items</h3>
               <p>Review saved fashion picks and move them into the cart when you are ready to buy.</p>
+            </a>
+            <a class="action-tile" href="/orders">
+              <h3>Order History</h3>
+              <p>Open previously confirmed orders and inspect the item snapshots captured during checkout.</p>
             </a>
             <a class="action-tile" href="/dashboard">
               <h3>Open Dashboard</h3>

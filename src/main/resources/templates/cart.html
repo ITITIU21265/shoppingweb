@@ -24,12 +24,16 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/saved">Saved</a>
+        <a href="/orders">Orders</a>
         <a href="/profile">Profile</a>
         <a href="/dashboard">Dashboard</a>
       </nav>
 
       <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a class="header-shortcut is-active" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
@@ -47,7 +51,7 @@
         <div>
           <p class="eyebrow">Cart overview</p>
           <h1>Review items before you move to checkout.</h1>
-          <p>Adjust quantities, remove items, and keep track of the running subtotal from your cart page.</p>
+          <p>Adjust quantities, remove items, and use the new card checkboxes to decide exactly which products go into the next checkout.</p>
         </div>
         <div class="hero-badge">
           <span>Total items</span>
@@ -67,6 +71,18 @@
       <section th:if="${!#lists.isEmpty(cartSummary.items)}" class="cart-layout">
         <div class="cart-items-panel">
           <article th:each="item : ${cartSummary.items}" class="cart-item-card">
+            <label class="cart-item-selector" th:for="'checkout-item-' + ${item.variantId}">
+              <input
+                class="cart-select-checkbox"
+                type="checkbox"
+                form="checkout-selection-form"
+                name="selectedVariantIds"
+                th:id="'checkout-item-' + ${item.variantId}"
+                th:value="${item.variantId}"
+                checked
+                aria-label="Select item for checkout"
+                th:attr="data-quantity=${item.quantity},data-line-total=${item.lineTotal}" />
+            </label>
             <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
               <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
             </a>
@@ -78,19 +94,31 @@
               </div>
 
               <div class="cart-item-actions">
-                <form class="quantity-form" method="post" th:action="@{/cart/items/{variantId}/quantity(variantId=${item.variantId})}">
+                <form
+                  class="quantity-form"
+                  method="post"
+                  th:action="@{/cart/items/{variantId}/quantity(variantId=${item.variantId})}"
+                  th:id="'quantity-form-' + ${item.variantId}">
                   <label class="field">
                     <span>Quantity</span>
                     <input type="number" name="quantity" min="0" th:value="${item.quantity}" />
                   </label>
                   <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                  <button class="btn btn-primary btn-cart-action" type="submit">Update</button>
                 </form>
 
-                <form class="cart-remove-form" method="post" th:action="@{/cart/items/{variantId}/remove(variantId=${item.variantId})}">
-                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                  <button class="btn btn-outline-accent btn-cart-action" type="submit">Remove</button>
-                </form>
+                <div class="cart-item-action-buttons">
+                  <button
+                    class="btn btn-primary btn-cart-action"
+                    type="submit"
+                    th:attr="form='quantity-form-' + ${item.variantId}">
+                    Update
+                  </button>
+
+                  <form class="cart-remove-form" method="post" th:action="@{/cart/items/{variantId}/remove(variantId=${item.variantId})}">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button class="btn btn-outline-accent btn-cart-action" type="submit">Remove</button>
+                  </form>
+                </div>
               </div>
             </div>
             <div class="cart-item-total">
@@ -103,17 +131,27 @@
         <aside class="panel-card cart-summary-card">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Summary</p>
+              <p class="eyebrow">Selected summary</p>
               <h2>Order Snapshot</h2>
             </div>
           </div>
           <dl class="info-list">
-            <div><dt>Items</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
-            <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Items in cart</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
+            <div><dt>Cart subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Selected items</dt><dd id="selected-items-count" th:text="${cartSummary.totalQuantity}">0</dd></div>
+            <div><dt>Selected subtotal</dt><dd id="selected-subtotal" th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
           </dl>
-          <a class="btn btn-primary btn-full" href="/catalog">Continue shopping</a>
+          <p class="checkout-note">Use the checkbox on each card item to choose what goes into this checkout. Unchecked items stay in the cart.</p>
+          <form id="checkout-selection-form" class="stack-form" method="get" action="/checkout">
+            <button id="checkout-selection-submit" class="btn btn-primary btn-full" type="submit">Proceed to checkout</button>
+          </form>
+          <div class="stack-form">
+            <a class="btn btn-outline-accent btn-full" href="/orders">Order history</a>
+            <a class="btn btn-ghost btn-full" href="/catalog">Continue shopping</a>
+          </div>
         </aside>
       </section>
     </main>
+    <script src="/js/cart-selection.js"></script>
   </body>
 </html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Placed | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Order Success</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a class="is-active" href="/orders">Orders</a>
+        <a href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
+        <a class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Order complete</p>
+          <h1>Your order has been placed successfully.</h1>
+          <p>The selected items were placed successfully. Any unchecked items remain in your cart for a later checkout.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Order number</span>
+          <strong th:text="${order.orderNumber}">SH-ORDER</strong>
+        </div>
+      </section>
+
+      <section class="success-layout">
+        <article class="panel-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Order summary</p>
+              <h2>What was confirmed</h2>
+            </div>
+            <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.statusLabel}">Confirmed</span>
+          </div>
+
+          <dl class="info-list">
+            <div><dt>Placed at</dt><dd th:text="${order.createdAtLabel}">-</dd></div>
+            <div><dt>Total items</dt><dd th:text="${order.totalQuantity}">0</dd></div>
+            <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(order.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Email</dt><dd th:text="${order.customerEmail}">-</dd></div>
+          </dl>
+
+          <div class="detail-copy">
+            <h3>Shipping address</h3>
+            <p th:text="${order.shippingAddress}">-</p>
+          </div>
+        </article>
+
+        <aside class="panel-card success-actions-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Next steps</p>
+              <h2>Continue from here</h2>
+            </div>
+          </div>
+
+          <div class="stack-form">
+            <a class="btn btn-primary btn-full" th:href="@{/orders/{id}(id=${order.id})}">View Order Detail</a>
+            <a class="btn btn-outline-accent btn-full" href="/orders">Open Order History</a>
+            <a class="btn btn-ghost btn-full" href="/catalog">Continue Shopping</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

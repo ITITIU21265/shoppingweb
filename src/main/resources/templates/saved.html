@@ -24,12 +24,16 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a class="is-active" href="/saved">Saved</a>
+        <a href="/orders">Orders</a>
         <a href="/profile">Profile</a>
         <a href="/dashboard">Dashboard</a>
       </nav>
 
       <div class="header-user">
+        <a class="header-shortcut is-active" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
@@ -60,7 +64,7 @@
 
       <section th:if="${#lists.isEmpty(savedProducts)}" class="panel-card empty-state">
         <h2>No saved items yet.</h2>
-        <p>Tap the Save button on a product detail page to build your wishlist.</p>
+        <p>Use the Save action directly on product cards to build your wishlist.</p>
         <a class="btn btn-primary" href="/catalog">Browse catalog</a>
       </section>
 

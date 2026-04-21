@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Detail | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Order Detail</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a class="is-active" href="/orders">Orders</a>
+        <a href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
+        <a class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <a class="text-link" href="/orders">Back to orders</a>
+
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Order detail</p>
+          <h1 th:text="${order.orderNumber}">SH-ORDER</h1>
+          <p>Review the exact item snapshot, address, and totals that were captured when the order was confirmed.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Status</span>
+          <strong th:text="${order.statusLabel}">Confirmed</strong>
+        </div>
+      </section>
+
+      <section class="order-detail-layout">
+        <div class="checkout-stack">
+          <section class="panel-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Items</p>
+                <h2>Order Lines</h2>
+              </div>
+              <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.statusLabel}">Confirmed</span>
+            </div>
+
+            <div class="order-line-list">
+              <article th:each="item : ${order.items}" class="order-line-card">
+                <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
+                  <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+                </a>
+                <div class="order-line-copy">
+                  <h3 th:text="${item.productName}">Product Name</h3>
+                  <p class="product-meta" th:text="'SKU: ' + ${item.sku}">SKU</p>
+                  <p class="product-meta" th:text="'Quantity: ' + ${item.quantity}">Quantity</p>
+                  <p class="product-meta" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+                </div>
+                <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+              </article>
+            </div>
+          </section>
+        </div>
+
+        <aside class="order-side-stack">
+          <section class="panel-card cart-summary-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Summary</p>
+                <h2>Order Summary</h2>
+              </div>
+            </div>
+
+            <dl class="info-list">
+              <div><dt>Placed at</dt><dd th:text="${order.createdAtLabel}">-</dd></div>
+              <div><dt>Total items</dt><dd th:text="${order.totalQuantity}">0</dd></div>
+              <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(order.subtotal, 1, 2)}">$0.00</dd></div>
+              <div><dt>Email</dt><dd th:text="${order.customerEmail}">-</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Delivery</p>
+                <h2>Shipping Address</h2>
+              </div>
+            </div>
+
+            <div class="detail-copy">
+              <h3 th:text="${order.customerName}">Customer Name</h3>
+              <p th:text="${order.shippingAddress}">-</p>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

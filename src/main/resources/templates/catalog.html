@@ -24,13 +24,17 @@
 
       <nav class="main-nav">
         <a class="is-active" href="/catalog">Catalog</a>
-        <a th:if="${signedIn}" href="/saved">Saved</a>
+        <a th:if="${signedIn}" href="/orders">Orders</a>
         <a th:if="${signedIn}" href="/profile">Profile</a>
         <a th:if="${signedIn}" href="/dashboard">Dashboard</a>
         <a th:if="${currentUser != null and currentUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
 
       <div class="header-user">
+        <a th:if="${signedIn}" class="header-shortcut" href="/saved">
+          <span>Saved</span>
+          <strong th:text="${savedItemCount}">0</strong>
+        </a>
         <a th:if="${signedIn}" class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
@@ -124,9 +128,23 @@
 
       <section class="product-grid">
         <article th:each="product : ${products}" class="product-card">
-          <a th:href="@{/products/{slug}(slug=${product.slug})}">
-            <img th:src="${product.imageUrl}" th:alt="${product.name}" />
-          </a>
+          <div class="product-card-media">
+            <a th:href="@{/products/{slug}(slug=${product.slug})}">
+              <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+            </a>
+            <form th:if="${signedIn}" class="product-save-form" method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
+              <input type="hidden" name="redirectTo" value="/catalog" />
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button
+                class="product-save-chip"
+                th:classappend="${savedProductIds.contains(product.id)} ? ' is-saved'"
+                type="submit"
+                th:text="${savedProductIds.contains(product.id)} ? 'Saved' : 'Save'">
+                Save
+              </button>
+            </form>
+            <a th:if="${!signedIn}" class="product-save-chip" href="/auth/login">Save</a>
+          </div>
           <div class="product-content">
             <p class="product-meta">
               <span th:text="${product.category.displayName}">Category</span>
