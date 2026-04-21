@@ -1,4 +1,4 @@
-package com.web.shoppingweb.controller;
+package com.web.shoppingweb.controller.web;
 
 import java.util.List;
 

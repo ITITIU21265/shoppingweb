@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+﻿<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/style.css" />
-<!-- <script src="/js/auth-panel.js" defer></script> -->
+    <script src="/js/auth-panel.js" defer></script>
   </head>
   <body class="auth-body">
     <main class="auth-shell">
@@ -33,29 +33,27 @@
         </div>
       </section>
 
-      <section class="auth-card" id="auth-card" th:attr="data-active-tab=${activeTab}">
-        <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
-        <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+      <section class="auth-card" id="auth-card" data-active-tab="signin">
+        
+        
 
         <div class="auth-toggle" role="tablist" aria-label="Authentication tabs">
           <a
             id="signin-tab"
             role="tab"
             data-auth-target="signin"
-            th:href="@{/auth/login(tab='signin')}"
+            href="/auth/login?tab=signin"
             aria-controls="signin-panel"
-            th:classappend="${activeTab == 'signin'} ? ' is-active' : ''"
-            th:attr="aria-selected=${activeTab == 'signin'}, tabindex=${activeTab == 'signin'} ? 0 : -1">
+            aria-selected="true" tabindex="0" class=" is-active">
             Sign In
           </a>
           <a
             id="signup-tab"
             role="tab"
             data-auth-target="signup"
-            th:href="@{/auth/login(tab='signup')}"
+            href="/auth/login?tab=signup"
             aria-controls="signup-panel"
-            th:classappend="${activeTab == 'signup'} ? ' is-active' : ''"
-            th:attr="aria-selected=${activeTab == 'signup'}, tabindex=${activeTab == 'signup'} ? 0 : -1">
+            aria-selected="false" tabindex="-1">
             Create Account
           </a>
         </div>
@@ -66,8 +64,7 @@
             id="signin-panel"
             data-auth-panel="signin"
             role="tabpanel"
-            aria-labelledby="signin-tab"
-            th:attr="aria-hidden=${activeTab != 'signin'}, inert=${activeTab != 'signin'} ? 'inert' : null">
+            aria-labelledby="signin-tab" aria-hidden="false">
             <form class="auth-form" method="post" action="/auth/login">
               <header>
                 <p class="eyebrow">Welcome back</p>
@@ -84,7 +81,7 @@
                 <input name="password" type="password" autocomplete="current-password" placeholder="Minimum 6 characters" />
               </label>
 
-              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <input type="hidden" name="_csrf" value="tIuG_v-W0dcLsV5_inv0IBWY2eg6-AEm2T-4o8F-gS3J_8sG176wzsjz6OcmhztM6VbAESOg9NFYm2MLugbewKAdsE79zf0y" />
 
               <div class="auth-actions">
                 <a href="/auth/forgot-password">Forgot password?</a>
@@ -94,7 +91,7 @@
 
               <p class="auth-switch-copy">
                 New to StyleHub?
-                <a class="auth-inline-switch" data-auth-target="signup" th:href="@{/auth/login(tab='signup')}">Create an account</a>
+                <a class="auth-inline-switch" data-auth-target="signup" href="/auth/login?tab=signup">Create an account</a>
               </p>
             </form>
           </section>
@@ -104,9 +101,8 @@
             id="signup-panel"
             data-auth-panel="signup"
             role="tabpanel"
-            aria-labelledby="signup-tab"
-            th:attr="aria-hidden=${activeTab != 'signup'}, inert=${activeTab != 'signup'} ? 'inert' : null">
-            <form class="auth-form" method="post" th:object="${registerRequest}" action="/auth/register">
+            aria-labelledby="signup-tab" aria-hidden="true" inert="inert">
+            <form class="auth-form" method="post" action="/auth/register">
               <header>
                 <p class="eyebrow">New to StyleHub</p>
                 <h2>Create Account</h2>
@@ -114,31 +110,31 @@
 
               <label class="field">
                 <span>Full Name</span>
-                <input th:field="*{fullName}" type="text" autocomplete="name" placeholder="Your full name" />
+                <input type="text" autocomplete="name" placeholder="Your full name" id="fullName" name="fullName" value="" />
               </label>
 
               <label class="field">
                 <span>Username</span>
-                <input th:field="*{username}" type="text" autocomplete="username" placeholder="Choose a username" />
+                <input type="text" autocomplete="username" placeholder="Choose a username" id="username" name="username" value="" />
               </label>
 
               <label class="field">
                 <span>Email</span>
-                <input th:field="*{email}" type="email" autocomplete="email" placeholder="you@example.com" />
+                <input type="email" autocomplete="email" placeholder="you@example.com" id="email" name="email" value="" />
               </label>
 
               <label class="field">
                 <span>Password</span>
-                <input th:field="*{password}" type="password" autocomplete="new-password" placeholder="At least 6 characters" />
+                <input type="password" autocomplete="new-password" placeholder="At least 6 characters" id="password" name="password" value="" />
               </label>
 
-              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <input type="hidden" name="_csrf" value="tIuG_v-W0dcLsV5_inv0IBWY2eg6-AEm2T-4o8F-gS3J_8sG176wzsjz6OcmhztM6VbAESOg9NFYm2MLugbewKAdsE79zf0y" />
 
               <button class="btn btn-primary btn-full" type="submit">Create Account</button>
 
               <p class="auth-switch-copy">
                 Already have an account?
-                <a class="auth-inline-switch" data-auth-target="signin" th:href="@{/auth/login(tab='signin')}">Back to sign in</a>
+                <a class="auth-inline-switch" data-auth-target="signin" href="/auth/login?tab=signin">Back to sign in</a>
               </p>
             </form>
           </section>
@@ -147,3 +143,4 @@
     </main>
   </body>
 </html>
+

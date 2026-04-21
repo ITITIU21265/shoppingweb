@@ -1,4 +1,4 @@
-package com.web.shoppingweb.controller;
+package com.web.shoppingweb.controller.web;
 
 import java.util.Set;
 
@@ -14,7 +14,7 @@ import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.ProductService;
 import com.web.shoppingweb.service.UserService;
 
-@ControllerAdvice(annotations = Controller.class)
+@ControllerAdvice(basePackages = "com.web.shoppingweb.controller.web")
 public class ViewModelAdvice {
 
     private final UserService userService;

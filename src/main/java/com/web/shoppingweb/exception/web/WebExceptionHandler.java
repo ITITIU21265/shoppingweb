@@ -1,11 +1,11 @@
-package com.web.shoppingweb.exception;
+package com.web.shoppingweb.exception.web;
 
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-@ControllerAdvice
-public class GlobalExceptionHandler {
+@ControllerAdvice(basePackages = "com.web.shoppingweb.controller.web")
+public class WebExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public String handleGlobalException(Exception ex, Model model) {

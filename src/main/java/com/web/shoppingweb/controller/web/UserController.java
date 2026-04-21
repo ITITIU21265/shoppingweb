@@ -1,4 +1,4 @@
-package com.web.shoppingweb.controller;
+package com.web.shoppingweb.controller.web;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;

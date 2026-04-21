@@ -14,7 +14,7 @@ public interface ProductService {
 
     Product getProductDetail(String slug);
 
-    Product createProduct(ProductFormDTO dto);
+    Product createProduct(ProductFormDTO dto, String sellerUsername);
 
     long countProducts();
 }

@@ -1,6 +1,7 @@
-package com.web.shoppingweb.controller;
+package com.web.shoppingweb.controller.web;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.web.shoppingweb.dto.ProductFormDTO;
 import com.web.shoppingweb.entity.ProductCategory;
+import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.ProductService;
 
 import jakarta.validation.Valid;
@@ -52,6 +54,7 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public String createProduct(@Valid @ModelAttribute("productForm") ProductFormDTO productForm,
                                 BindingResult bindingResult,
+                                Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.productForm", bindingResult);
@@ -61,7 +64,7 @@ public class ProductController {
         }
 
         try {
-            productService.createProduct(productForm);
+            productService.createProduct(productForm, SecurityUtils.requireCurrentUsername(authentication));
             redirectAttributes.addFlashAttribute("successMessage", "Product created successfully.");
         } catch (RuntimeException ex) {
             redirectAttributes.addFlashAttribute("productForm", productForm);

@@ -7,9 +7,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -21,6 +24,20 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", nullable = false)
+    private User seller;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private CategoryEntity categoryRef;
+
+    @Column(name = "brand_id")
+    private Long brandId;
+
+    @Column(name = "title", nullable = false, length = 255)
+    private String title;
 
     @Column(nullable = false, length = 140)
     private String name;
@@ -47,6 +64,26 @@ public class Product {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ProductGender gender;
+
+    @Column(length = 40)
+    private String season;
+
+    @Column(name = "style_tag", length = 80)
+    private String styleTag;
+
+    @Column(name = "care_info", columnDefinition = "text")
+    private String careInfo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ProductStatus status = ProductStatus.ACTIVE;
+
+    @Column(nullable = false, length = 3)
+    private String currency = "VND";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -55,6 +92,15 @@ public class Product {
 
     @PrePersist
     protected void onCreate() {
+        if (title == null || title.isBlank()) {
+            title = name;
+        }
+        if (currency == null || currency.isBlank()) {
+            currency = "VND";
+        }
+        if (status == null) {
+            status = ProductStatus.ACTIVE;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
@@ -70,6 +116,38 @@ public class Product {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getSeller() {
+        return seller;
+    }
+
+    public void setSeller(User seller) {
+        this.seller = seller;
+    }
+
+    public CategoryEntity getCategoryRef() {
+        return categoryRef;
+    }
+
+    public void setCategoryRef(CategoryEntity categoryRef) {
+        this.categoryRef = categoryRef;
+    }
+
+    public Long getBrandId() {
+        return brandId;
+    }
+
+    public void setBrandId(Long brandId) {
+        this.brandId = brandId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getName() {
@@ -134,6 +212,54 @@ public class Product {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public ProductGender getGender() {
+        return gender;
+    }
+
+    public void setGender(ProductGender gender) {
+        this.gender = gender;
+    }
+
+    public String getSeason() {
+        return season;
+    }
+
+    public void setSeason(String season) {
+        this.season = season;
+    }
+
+    public String getStyleTag() {
+        return styleTag;
+    }
+
+    public void setStyleTag(String styleTag) {
+        this.styleTag = styleTag;
+    }
+
+    public String getCareInfo() {
+        return careInfo;
+    }
+
+    public void setCareInfo(String careInfo) {
+        this.careInfo = careInfo;
+    }
+
+    public ProductStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ProductStatus status) {
+        this.status = status;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public LocalDateTime getCreatedAt() {

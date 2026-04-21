@@ -1,4 +1,4 @@
-package com.web.shoppingweb.controller;
+package com.web.shoppingweb.controller.web;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,6 +36,7 @@ public class AuthController {
                             @RequestParam(required = false) boolean logout,
                             @RequestParam(required = false) boolean registered,
                             @RequestParam(required = false) boolean inactive,
+                            @RequestParam(required = false) String tab,
                             Model model) {
         if (authentication != null
                 && authentication.isAuthenticated()
@@ -47,17 +48,23 @@ public class AuthController {
             model.addAttribute("registerRequest", new RegisterRequestDTO());
         }
 
+        String requestedTab = "signup".equalsIgnoreCase(tab) ? "signup" : "signin";
+
         if (!model.containsAttribute("activeTab")) {
-            model.addAttribute("activeTab", "signin");
+            model.addAttribute("activeTab", requestedTab);
         }
 
         if (error) {
+            model.addAttribute("activeTab", "signin");
             model.addAttribute("errorMessage", "Invalid username, email, or password.");
         } else if (inactive) {
+            model.addAttribute("activeTab", "signin");
             model.addAttribute("errorMessage", "Your account is no longer active.");
         } else if (logout) {
+            model.addAttribute("activeTab", "signin");
             model.addAttribute("successMessage", "You have been signed out.");
         } else if (registered) {
+            model.addAttribute("activeTab", "signin");
             model.addAttribute("successMessage", "Account created successfully. Please sign in.");
         }
 
