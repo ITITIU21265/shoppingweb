@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saved Items | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Saved Items</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a class="is-active" href="/saved">Saved</a>
+        <a href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Wishlist</p>
+          <h1>Saved pieces you may want to buy later.</h1>
+          <p>Use this space to keep favorite clothing items before moving them into the shopping cart.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Saved products</span>
+          <strong th:text="${#lists.size(savedProducts)} + ' items'">0 items</strong>
+        </div>
+      </section>
+
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+      <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+      <section th:if="${#lists.isEmpty(savedProducts)}" class="panel-card empty-state">
+        <h2>No saved items yet.</h2>
+        <p>Tap the Save button on a product detail page to build your wishlist.</p>
+        <a class="btn btn-primary" href="/catalog">Browse catalog</a>
+      </section>
+
+      <section th:if="${!#lists.isEmpty(savedProducts)}" class="product-grid">
+        <article th:each="product : ${savedProducts}" class="product-card">
+          <a th:href="@{/products/{slug}(slug=${product.slug})}">
+            <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+          </a>
+          <div class="product-content">
+            <p class="product-meta">
+              <span th:text="${product.category.displayName}">Category</span>
+            </p>
+            <h2 class="product-title" th:text="${product.name}">Product Name</h2>
+            <p class="lead" th:text="${product.description}">Description</p>
+            <div class="product-footer product-actions-row">
+              <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+              <div class="product-action-buttons">
+                <form method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
+                  <input type="hidden" name="redirectTo" value="/saved" />
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
+                </form>
+                <form method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
+                  <input type="hidden" name="redirectTo" value="/saved" />
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button class="btn btn-outline-accent btn-product-action" type="submit">Remove</button>
+                </form>
+                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

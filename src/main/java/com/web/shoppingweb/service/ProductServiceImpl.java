@@ -12,10 +12,13 @@ import com.web.shoppingweb.entity.CategoryEntity;
 import com.web.shoppingweb.entity.Product;
 import com.web.shoppingweb.entity.ProductCategory;
 import com.web.shoppingweb.entity.ProductStatus;
+import com.web.shoppingweb.entity.ProductVariant;
+import com.web.shoppingweb.entity.ProductVariantStatus;
 import com.web.shoppingweb.entity.User;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
 import com.web.shoppingweb.repository.CategoryRepository;
 import com.web.shoppingweb.repository.ProductRepository;
+import com.web.shoppingweb.repository.ProductVariantRepository;
 import com.web.shoppingweb.repository.UserRepository;
 
 @Service
@@ -24,13 +27,16 @@ public class ProductServiceImpl implements ProductService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
 
     public ProductServiceImpl(CategoryRepository categoryRepository,
                               ProductRepository productRepository,
+                              ProductVariantRepository productVariantRepository,
                               UserRepository userRepository) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
     }
 
@@ -77,7 +83,9 @@ public class ProductServiceImpl implements ProductService {
         product.setCurrency("VND");
         product.setSlug(generateUniqueSlug(dto.getName()));
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        ensureDefaultVariant(savedProduct);
+        return savedProduct;
     }
 
     @Override
@@ -107,5 +115,20 @@ public class ProductServiceImpl implements ProductService {
         String slug = category.name().toLowerCase(Locale.ROOT).replace('_', '-');
         return categoryRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found for slug: " + slug));
+    }
+
+    private void ensureDefaultVariant(Product product) {
+        if (productVariantRepository.existsByProduct(product)) {
+            return;
+        }
+
+        ProductVariant variant = new ProductVariant();
+        variant.setProduct(product);
+        variant.setSku("P" + product.getId() + "-DEFAULT");
+        variant.setPriceAmount(product.getPrice().movePointRight(2).longValueExact());
+        variant.setStockQty(100);
+        variant.setDefault(true);
+        variant.setStatus(ProductVariantStatus.ACTIVE);
+        productVariantRepository.save(variant);
     }
 }

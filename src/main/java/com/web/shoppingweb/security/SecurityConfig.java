@@ -96,7 +96,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/", "/catalog", "/products/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/profile", "/dashboard", "/account/**").authenticated()
+                .requestMatchers("/profile", "/dashboard", "/account/**", "/saved", "/saved/**", "/cart", "/cart/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/products").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

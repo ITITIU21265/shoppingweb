@@ -24,12 +24,17 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
+        <a href="/saved">Saved</a>
         <a href="/profile">Profile</a>
         <a class="is-active" href="/dashboard">Dashboard</a>
         <a th:if="${dashboardUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
 
       <div class="header-user">
+        <a class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
         <span class="user-chip" th:text="${#strings.substring(dashboardUser.fullName ?: dashboardUser.username, 0, 1)}">U</span>
         <form method="post" action="/auth/logout">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />

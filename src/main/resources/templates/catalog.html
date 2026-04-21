@@ -24,12 +24,17 @@
 
       <nav class="main-nav">
         <a class="is-active" href="/catalog">Catalog</a>
+        <a th:if="${signedIn}" href="/saved">Saved</a>
         <a th:if="${signedIn}" href="/profile">Profile</a>
         <a th:if="${signedIn}" href="/dashboard">Dashboard</a>
         <a th:if="${currentUser != null and currentUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
 
       <div class="header-user">
+        <a th:if="${signedIn}" class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
         <span th:if="${currentUser != null}" class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
         <a th:if="${!signedIn}" class="btn btn-primary" href="/auth/login">Sign In</a>
         <form th:if="${signedIn}" method="post" action="/auth/logout">
@@ -125,13 +130,21 @@
           <div class="product-content">
             <p class="product-meta">
               <span th:text="${product.category.displayName}">Category</span>
-              <span th:if="${product.featured}"> • Featured</span>
+              <span th:if="${product.featured}">• Featured</span>
             </p>
             <h2 class="product-title" th:text="${product.name}">Product Name</h2>
             <p class="lead" th:text="${product.description}">Description</p>
-            <div class="product-footer">
+            <div class="product-footer product-actions-row">
               <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
-              <a class="btn btn-primary" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+              <div class="product-action-buttons">
+                <form th:if="${signedIn}" method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
+                  <input type="hidden" name="redirectTo" value="/catalog" />
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
+                </form>
+                <a th:if="${!signedIn}" class="btn btn-primary btn-product-action" href="/auth/login">Add to Cart</a>
+                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+              </div>
             </div>
           </div>
         </article>

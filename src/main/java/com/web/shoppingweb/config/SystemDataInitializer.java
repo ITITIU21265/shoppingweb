@@ -9,12 +9,15 @@ import org.springframework.stereotype.Component;
 import com.web.shoppingweb.entity.Product;
 import com.web.shoppingweb.entity.ProductCategory;
 import com.web.shoppingweb.entity.ProductStatus;
+import com.web.shoppingweb.entity.ProductVariant;
+import com.web.shoppingweb.entity.ProductVariantStatus;
 import com.web.shoppingweb.entity.Role;
 import com.web.shoppingweb.entity.User;
 import com.web.shoppingweb.entity.UserStatus;
 import com.web.shoppingweb.entity.CategoryEntity;
 import com.web.shoppingweb.repository.CategoryRepository;
 import com.web.shoppingweb.repository.ProductRepository;
+import com.web.shoppingweb.repository.ProductVariantRepository;
 import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 
@@ -25,17 +28,20 @@ public class SystemDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final PasswordEncoder passwordEncoder;
 
     public SystemDataInitializer(RoleRepository roleRepository,
                                  UserRepository userRepository,
                                  CategoryRepository categoryRepository,
                                  ProductRepository productRepository,
+                                 ProductVariantRepository productVariantRepository,
                                  PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.productVariantRepository = productVariantRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -48,6 +54,7 @@ public class SystemDataInitializer implements CommandLineRunner {
         ensureDemoSeller();
         ensureCatalogCategories();
         ensureDemoProducts();
+        ensureDefaultVariants();
     }
 
     private void ensureRole(String code, String name) {
@@ -179,5 +186,22 @@ public class SystemDataInitializer implements CommandLineRunner {
 
     private String toCategorySlug(ProductCategory category) {
         return category.name().toLowerCase().replace('_', '-');
+    }
+
+    private void ensureDefaultVariants() {
+        for (Product product : productRepository.findAll()) {
+            if (productVariantRepository.existsByProduct(product)) {
+                continue;
+            }
+
+            ProductVariant variant = new ProductVariant();
+            variant.setProduct(product);
+            variant.setSku("P" + product.getId() + "-DEFAULT");
+            variant.setPriceAmount(product.getPrice().movePointRight(2).longValueExact());
+            variant.setStockQty(100);
+            variant.setDefault(true);
+            variant.setStatus(ProductVariantStatus.ACTIVE);
+            productVariantRepository.save(variant);
+        }
     }
 }

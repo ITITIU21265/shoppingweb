@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cart | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Shopping Cart</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+        <a href="/saved">Saved</a>
+        <a href="/profile">Profile</a>
+        <a href="/dashboard">Dashboard</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut is-active" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
+        <form method="post" action="/auth/logout">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <button class="btn btn-ghost" type="submit">Sign Out</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">Cart overview</p>
+          <h1>Review items before you move to checkout.</h1>
+          <p>Adjust quantities, remove items, and keep track of the running subtotal from your cart page.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Total items</span>
+          <strong th:text="${cartSummary.totalQuantity} + ' items'">0 items</strong>
+        </div>
+      </section>
+
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+      <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+      <section th:if="${#lists.isEmpty(cartSummary.items)}" class="panel-card empty-state">
+        <h2>Your cart is empty.</h2>
+        <p>Add items from the catalog or from your saved list to start building an order.</p>
+        <a class="btn btn-primary" href="/catalog">Shop now</a>
+      </section>
+
+      <section th:if="${!#lists.isEmpty(cartSummary.items)}" class="cart-layout">
+        <div class="cart-items-panel">
+          <article th:each="item : ${cartSummary.items}" class="cart-item-card">
+            <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
+              <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+            </a>
+            <div class="cart-item-content">
+              <div>
+                <p class="eyebrow">Cart item</p>
+                <h2 th:text="${item.productName}">Product Name</h2>
+                <p class="product-meta" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+              </div>
+
+              <div class="cart-item-actions">
+                <form class="quantity-form" method="post" th:action="@{/cart/items/{variantId}/quantity(variantId=${item.variantId})}">
+                  <label class="field">
+                    <span>Quantity</span>
+                    <input type="number" name="quantity" min="0" th:value="${item.quantity}" />
+                  </label>
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button class="btn btn-primary btn-cart-action" type="submit">Update</button>
+                </form>
+
+                <form class="cart-remove-form" method="post" th:action="@{/cart/items/{variantId}/remove(variantId=${item.variantId})}">
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button class="btn btn-outline-accent btn-cart-action" type="submit">Remove</button>
+                </form>
+              </div>
+            </div>
+            <div class="cart-item-total">
+              <span>Line total</span>
+              <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+            </div>
+          </article>
+        </div>
+
+        <aside class="panel-card cart-summary-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Summary</p>
+              <h2>Order Snapshot</h2>
+            </div>
+          </div>
+          <dl class="info-list">
+            <div><dt>Items</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
+            <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+          </dl>
+          <a class="btn btn-primary btn-full" href="/catalog">Continue shopping</a>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>
