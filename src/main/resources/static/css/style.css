@@ -1366,18 +1366,33 @@ p {
   display: grid;
   gap: 16px;
   justify-items: center;
+  min-width: 0;
+}
+
+.profile-card > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.profile-card h2,
+.profile-card p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .info-list {
   width: 100%;
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .info-list div {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
   gap: 16px;
+  align-items: start;
   border-top: 1px solid var(--line);
   padding-top: 12px;
 }
@@ -1385,6 +1400,14 @@ p {
 .info-list dt {
   color: var(--muted);
   font-weight: 700;
+  text-align: left;
+}
+
+.info-list dd {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .action-tile {
