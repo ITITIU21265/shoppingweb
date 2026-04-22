@@ -16,6 +16,7 @@ import com.web.shoppingweb.dto.ForgotPasswordDTO;
 import com.web.shoppingweb.dto.RegisterRequestDTO;
 import com.web.shoppingweb.dto.ResetPasswordDTO;
 import com.web.shoppingweb.exception.DuplicateResourceException;
+import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.UserService;
 
 import jakarta.validation.Valid;
@@ -41,7 +42,9 @@ public class AuthController {
         if (authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
-            return "redirect:/dashboard";
+            return SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER")
+                    ? "redirect:/dashboard"
+                    : "redirect:/profile";
         }
 
         if (!model.containsAttribute("registerRequest")) {

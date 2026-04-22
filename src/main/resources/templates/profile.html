@@ -26,7 +26,7 @@
         <a href="/catalog">Catalog</a>
         <a href="/orders">Orders</a>
         <a class="is-active" href="/profile">Profile</a>
-        <a href="/dashboard">Dashboard</a>
+        <a th:if="${hasDashboardAccess}" href="/dashboard">Dashboard</a>
       </nav>
 
       <div class="header-user">
@@ -47,11 +47,15 @@
     </header>
 
     <main class="page-shell">
+      <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+      <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
       <section class="hero-card">
         <div>
           <p class="eyebrow">Member area</p>
           <h1 th:text="'Welcome back, ' + ${profileUser.fullName} + '!'">Welcome back</h1>
-          <p>Use this page as the customer-facing summary while account changes stay in the dashboard.</p>
+          <p th:if="${hasDashboardAccess}">Use this page as the customer-facing summary while account changes stay in the dashboard.</p>
+          <p th:if="${!hasDashboardAccess}">Use this page to review and manage your customer account details directly.</p>
         </div>
       </section>
 
@@ -88,7 +92,7 @@
               <h3>Order History</h3>
               <p>Open previously confirmed orders and inspect the item snapshots captured during checkout.</p>
             </a>
-            <a class="action-tile" href="/dashboard">
+            <a th:if="${hasDashboardAccess}" class="action-tile" href="/dashboard">
               <h3>Open Dashboard</h3>
               <p>Edit profile fields, change password, and manage account settings from the server-rendered dashboard.</p>
             </a>
@@ -96,6 +100,80 @@
               <h3>Manage Users</h3>
               <p>Review account status and roles from the MVC admin page.</p>
             </a>
+          </div>
+        </section>
+      </section>
+
+      <section th:if="${!hasDashboardAccess}" class="profile-settings-stack">
+        <section class="panel-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Account overview</p>
+              <h2>Profile Information</h2>
+            </div>
+          </div>
+
+          <form class="two-column-form" method="post" th:object="${updateProfileForm}" action="/profile">
+            <label class="field">
+              <span>Full Name</span>
+              <input th:field="*{fullName}" type="text" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input th:field="*{email}" type="email" />
+            </label>
+            <label class="field is-readonly">
+              <span>Username</span>
+              <input th:value="${profileUser.username}" type="text" readonly />
+            </label>
+            <label class="field is-readonly">
+              <span>Role</span>
+              <input th:value="${profileUser.role}" type="text" readonly />
+            </label>
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="form-footer">
+              <button class="btn btn-primary" type="submit">Save Profile</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel-card">
+          <div class="settings-stack">
+            <div>
+              <p class="eyebrow">Security</p>
+              <h2>Change Password</h2>
+            </div>
+
+            <form class="settings-form" method="post" th:object="${changePasswordForm}" action="/profile/password">
+              <label class="field">
+                <span>Current Password</span>
+                <input th:field="*{currentPassword}" type="password" />
+              </label>
+              <label class="field">
+                <span>New Password</span>
+                <input th:field="*{newPassword}" type="password" />
+              </label>
+              <label class="field">
+                <span>Confirm Password</span>
+                <input th:field="*{confirmPassword}" type="password" />
+              </label>
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button class="btn btn-primary" type="submit">Change Password</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="danger-zone">
+            <div>
+              <h3>Deactivate Account</h3>
+              <p>Mark this account as deleted and immediately end the current session.</p>
+            </div>
+            <form class="inline-form" method="post" th:object="${deleteAccountForm}" action="/account/delete">
+              <input th:field="*{password}" type="password" placeholder="Confirm with password" />
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button class="btn btn-danger" type="submit">Delete Account</button>
+            </form>
           </div>
         </section>
       </section>

@@ -4,6 +4,8 @@ import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,15 @@ public class ProductServiceImpl implements ProductService {
             return productRepository.findByActiveTrueOrderByFeaturedDescCreatedAtDesc();
         }
         return productRepository.findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(category);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Product> getCatalogPage(ProductCategory category, Pageable pageable) {
+        if (category == null) {
+            return productRepository.findByActiveTrueOrderByFeaturedDescCreatedAtDesc(pageable);
+        }
+        return productRepository.findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(category, pageable);
     }
 
     @Override

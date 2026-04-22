@@ -18,7 +18,7 @@
         <div class="brand-mark"></div>
         <div>
           <a class="brand-name" href="/catalog">StyleHub</a>
-          <p class="brand-subtitle">User Dashboard</p>
+          <p class="brand-subtitle" th:text="${dashboardUser.role == 'ADMIN'} ? 'Admin Dashboard' : (${dashboardUser.role == 'SELLER'} ? 'Seller Dashboard' : 'User Dashboard')">User Dashboard</p>
         </div>
       </div>
 
@@ -53,10 +53,12 @@
           <div class="avatar-circle" th:text="${#strings.substring(dashboardUser.fullName ?: dashboardUser.username, 0, 1)}">U</div>
           <h1 th:text="${dashboardUser.fullName}">User</h1>
           <p th:text="'@' + ${dashboardUser.username}">@username</p>
+          <span class="dashboard-role-chip" th:text="${dashboardUser.role}">ROLE</span>
         </div>
 
         <div class="tab-list">
-          <a class="tab-button is-active" href="#profile">Profile</a>
+          <a class="tab-button is-active" href="#overview">Overview</a>
+          <a class="tab-button" href="#profile">Profile</a>
           <a class="tab-button" href="#security">Security</a>
           <a class="tab-button" href="#account">Account</a>
           <a th:if="${dashboardUser.role == 'ADMIN'}" class="tab-button" href="/admin/users">Admin Users</a>
@@ -66,6 +68,232 @@
       <section class="dashboard-content">
         <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
         <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+        <section id="overview" class="panel-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow" th:text="${dashboardUser.role == 'ADMIN'} ? 'System overview' : (${dashboardUser.role == 'SELLER'} ? 'Store overview' : 'Account overview')">Account overview</p>
+              <h2 th:text="${dashboardUser.role == 'ADMIN'} ? 'Admin Command Center' : (${dashboardUser.role == 'SELLER'} ? 'Seller Performance Hub' : 'Dashboard Overview')">Dashboard Overview</h2>
+            </div>
+          </div>
+
+          <p class="dashboard-lead" th:if="${dashboardUser.role == 'ADMIN'}">
+            Monitor platform health, review the latest order activity, and jump straight into customer and catalog administration.
+          </p>
+          <p class="dashboard-lead" th:if="${dashboardUser.role == 'SELLER'}">
+            Track your catalog, featured products, and inventory risk so you can keep your storefront ready for the next order.
+          </p>
+          <p class="dashboard-lead" th:if="${dashboardUser.role != 'ADMIN' and dashboardUser.role != 'SELLER'}">
+            Review your account settings and keep your profile secure.
+          </p>
+
+          <div class="stats-grid dashboard-metrics" th:if="${dashboardUser.role == 'ADMIN'}">
+            <article class="stat-card">
+              <span>Total Users</span>
+              <strong th:text="${adminTotalUsers}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Active Accounts</span>
+              <strong th:text="${adminActiveUsers}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Catalog Products</span>
+              <strong th:text="${adminTotalProducts}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Total Revenue</span>
+              <strong th:text="'$' + ${#numbers.formatDecimal(adminTotalRevenue, 1, 2)}">$0.00</strong>
+            </article>
+          </div>
+
+          <div class="stats-grid dashboard-metrics" th:if="${dashboardUser.role == 'SELLER'}">
+            <article class="stat-card">
+              <span>Managed Products</span>
+              <strong th:text="${sellerManagedProducts}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Featured Products</span>
+              <strong th:text="${sellerFeaturedProducts}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Low Stock Variants</span>
+              <strong th:text="${sellerLowStockCount}">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Active Categories</span>
+              <strong th:text="${sellerCategoryCount}">0</strong>
+            </article>
+          </div>
+
+          <div class="dashboard-panel-grid" th:if="${dashboardUser.role == 'ADMIN'}">
+            <section class="quick-actions-card dashboard-subpanel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Recent orders</p>
+                  <h2>Latest Platform Activity</h2>
+                </div>
+              </div>
+
+              <div class="dashboard-list" th:if="${!#lists.isEmpty(recentOrders)}">
+                <article th:each="order : ${recentOrders}" class="dashboard-list-item">
+                  <div>
+                    <h3 th:text="${order.orderNumber}">SH-000001</h3>
+                    <p th:text="${order.customerName}">Customer Name</p>
+                  </div>
+                  <div class="dashboard-list-meta">
+                    <span class="status-badge status-confirmed" th:text="${order.status.displayName}">Confirmed</span>
+                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(order.subtotalAmount, 2), 1, 2)}">$0.00</strong>
+                    <small th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy, HH:mm')}">22 Apr 2026, 10:00</small>
+                  </div>
+                </article>
+              </div>
+
+              <div th:if="${#lists.isEmpty(recentOrders)}" class="empty-state dashboard-empty">
+                <h3>No orders yet</h3>
+                <p>Platform orders will appear here as soon as customers complete checkout.</p>
+              </div>
+            </section>
+
+            <section class="quick-actions-card dashboard-subpanel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">System snapshot</p>
+                  <h2>Role Distribution</h2>
+                </div>
+              </div>
+
+              <div class="dashboard-mini-grid">
+                <article class="dashboard-mini-stat">
+                  <span>Orders</span>
+                  <strong th:text="${adminTotalOrders}">0</strong>
+                </article>
+                <article class="dashboard-mini-stat">
+                  <span>Categories</span>
+                  <strong th:text="${adminCategoryCount}">0</strong>
+                </article>
+                <article class="dashboard-mini-stat">
+                  <span>Admins</span>
+                  <strong th:text="${adminCount}">0</strong>
+                </article>
+                <article class="dashboard-mini-stat">
+                  <span>Sellers</span>
+                  <strong th:text="${sellerCount}">0</strong>
+                </article>
+                <article class="dashboard-mini-stat">
+                  <span>Customers</span>
+                  <strong th:text="${customerCount}">0</strong>
+                </article>
+                <article class="dashboard-mini-stat">
+                  <span>Revenue</span>
+                  <strong th:text="'$' + ${#numbers.formatDecimal(adminTotalRevenue, 1, 2)}">$0.00</strong>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <div class="dashboard-panel-grid" th:if="${dashboardUser.role == 'SELLER'}">
+            <section class="quick-actions-card dashboard-subpanel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Recent catalog updates</p>
+                  <h2>Your Latest Products</h2>
+                </div>
+              </div>
+
+              <div class="dashboard-list" th:if="${!#lists.isEmpty(recentSellerProducts)}">
+                <article th:each="product : ${recentSellerProducts}" class="dashboard-list-item">
+                  <div>
+                    <h3 th:text="${product.name}">Product Name</h3>
+                    <p th:text="${product.category.displayName}">Category</p>
+                  </div>
+                  <div class="dashboard-list-meta">
+                    <span class="dashboard-neutral-pill" th:text="${product.featured} ? 'Featured' : 'Standard'">Featured</span>
+                    <strong th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</strong>
+                    <small th:text="${#temporals.format(product.createdAt, 'dd MMM yyyy')}">22 Apr 2026</small>
+                  </div>
+                </article>
+              </div>
+
+              <div th:if="${#lists.isEmpty(recentSellerProducts)}" class="empty-state dashboard-empty">
+                <h3>No products yet</h3>
+                <p>Add your first product from the catalog page to start filling this dashboard.</p>
+              </div>
+            </section>
+
+            <section class="quick-actions-card dashboard-subpanel">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Inventory watch</p>
+                  <h2>Low Stock Variants</h2>
+                </div>
+              </div>
+
+              <div class="dashboard-list" th:if="${!#lists.isEmpty(sellerLowStockVariants)}">
+                <article th:each="variant : ${sellerLowStockVariants}" class="dashboard-list-item">
+                  <div>
+                    <h3 th:text="${variant.product.name}">Variant Product</h3>
+                    <p th:text="${variant.sku}">SKU</p>
+                  </div>
+                  <div class="dashboard-list-meta">
+                    <span class="dashboard-stock-pill" th:text="${variant.stockQty} + ' left'">3 left</span>
+                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(variant.priceAmount, 2), 1, 2)}">$0.00</strong>
+                  </div>
+                </article>
+              </div>
+
+              <div th:if="${#lists.isEmpty(sellerLowStockVariants)}" class="empty-state dashboard-empty">
+                <h3>Inventory looks healthy</h3>
+                <p>No active variant in your catalog is currently below the low-stock threshold.</p>
+              </div>
+            </section>
+          </div>
+
+          <div class="quick-actions-grid dashboard-actions" th:if="${dashboardUser.role == 'ADMIN'}">
+            <a class="action-tile" href="/admin/users">
+              <p class="eyebrow">Access</p>
+              <h3>Manage Users</h3>
+              <p>Review roles, block or reactivate accounts, and supervise platform permissions.</p>
+            </a>
+            <a class="action-tile" href="/orders">
+              <p class="eyebrow">Orders</p>
+              <h3>Review Orders</h3>
+              <p>Inspect the latest customer orders and confirm what entered the system most recently.</p>
+            </a>
+            <a class="action-tile" href="/catalog">
+              <p class="eyebrow">Catalog</p>
+              <h3>Open Catalog</h3>
+              <p>Browse live products, monitor product cards, and add new items as needed.</p>
+            </a>
+            <a class="action-tile" href="/profile">
+              <p class="eyebrow">Account</p>
+              <h3>Profile Settings</h3>
+              <p>Update your admin account details and keep your own access configuration current.</p>
+            </a>
+          </div>
+
+          <div class="quick-actions-grid dashboard-actions" th:if="${dashboardUser.role == 'SELLER'}">
+            <a class="action-tile" href="/catalog">
+              <p class="eyebrow">Catalog</p>
+              <h3>Manage Products</h3>
+              <p>Create new products, refine descriptions, and keep your storefront presentation polished.</p>
+            </a>
+            <a class="action-tile" href="/orders">
+              <p class="eyebrow">Orders</p>
+              <h3>Track Orders</h3>
+              <p>Follow customer purchases in one place and stay aligned with the latest order detail screens.</p>
+            </a>
+            <a class="action-tile" href="/saved">
+              <p class="eyebrow">Inspiration</p>
+              <h3>Saved Products</h3>
+              <p>Use your saved list as a lightweight reference board for future catalog decisions.</p>
+            </a>
+            <a class="action-tile" href="/profile">
+              <p class="eyebrow">Account</p>
+              <h3>Seller Profile</h3>
+              <p>Refresh your email, full name, and account security settings without leaving the dashboard.</p>
+            </a>
+          </div>
+        </section>
 
         <section id="profile" class="panel-card">
           <div class="panel-header">

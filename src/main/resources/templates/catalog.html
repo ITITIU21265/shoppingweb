@@ -26,7 +26,7 @@
         <a class="is-active" href="/catalog">Catalog</a>
         <a th:if="${signedIn}" href="/orders">Orders</a>
         <a th:if="${signedIn}" href="/profile">Profile</a>
-        <a th:if="${signedIn}" href="/dashboard">Dashboard</a>
+        <a th:if="${hasDashboardAccess}" href="/dashboard">Dashboard</a>
         <a th:if="${currentUser != null and currentUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
 
@@ -59,9 +59,13 @@
         </div>
         <div class="hero-badge">
           <span>Database-backed</span>
-          <strong th:text="${#lists.size(products)} + ' products'">0 products</strong>
+          <strong th:text="${totalProducts} + ' products'">0 products</strong>
         </div>
       </section>
+
+      <p th:if="${totalProducts > 0}" class="catalog-summary" th:text="'Showing ' + ${showingFrom} + ' - ' + ${showingTo} + ' of ' + ${totalProducts} + ' products.'">
+        Showing 1 - 18 of 18 products.
+      </p>
 
       <div th:if="${param.denied}" class="form-alert">You do not have permission to access that page.</div>
       <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
@@ -126,7 +130,7 @@
         </form>
       </section>
 
-      <section class="product-grid">
+      <section th:if="${!#lists.isEmpty(products)}" class="product-grid">
         <article th:each="product : ${products}" class="product-card">
           <div class="product-card-media">
             <a th:href="@{/products/{slug}(slug=${product.slug})}">
@@ -167,6 +171,63 @@
           </div>
         </article>
       </section>
+
+      <section th:if="${#lists.isEmpty(products)}" class="panel-card empty-state">
+        <h2>No products found.</h2>
+        <p>Try another category or come back after more products are published.</p>
+        <a class="btn btn-primary" href="/catalog">View all products</a>
+      </section>
+
+      <nav th:if="${totalPages > 1}" class="catalog-pagination" aria-label="Catalog pagination">
+        <div class="catalog-pagination-pages">
+          <a
+            class="pagination-link"
+            th:classappend="${!hasPreviousPage} ? ' is-disabled'"
+            th:href="@{/catalog(page=${hasPreviousPage ? currentPage - 1 : currentPage}, category=${selectedCategory != null ? selectedCategory.name() : null})}">
+            Previous
+          </a>
+
+          <a
+            th:each="pageNumber : ${#numbers.sequence(startPage, endPage)}"
+            class="pagination-link"
+            th:classappend="${pageNumber == currentPage} ? ' is-active'"
+            th:href="@{/catalog(page=${pageNumber}, category=${selectedCategory != null ? selectedCategory.name() : null})}"
+            th:text="${pageNumber}">
+            1
+          </a>
+
+          <a
+            class="pagination-link"
+            th:classappend="${!hasNextPage} ? ' is-disabled'"
+            th:href="@{/catalog(page=${hasNextPage ? currentPage + 1 : currentPage}, category=${selectedCategory != null ? selectedCategory.name() : null})}">
+            Next
+          </a>
+        </div>
+
+        <div class="catalog-pagination-tools">
+          <p class="catalog-pagination-status" th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">
+            Page 1 of 1
+          </p>
+
+          <form class="catalog-pagination-jump" method="get" action="/catalog">
+            <input
+              th:if="${selectedCategory != null}"
+              type="hidden"
+              name="category"
+              th:value="${selectedCategory.name()}" />
+            <label class="catalog-pagination-label" for="catalog-page-input">Go to page</label>
+            <input
+              id="catalog-page-input"
+              class="catalog-pagination-input"
+              type="number"
+              name="page"
+              min="1"
+              th:attr="max=${totalPages}"
+              th:value="${currentPage}" />
+            <button class="pagination-link" type="submit">Go</button>
+          </form>
+        </div>
+      </nav>
     </main>
   </body>
 </html>

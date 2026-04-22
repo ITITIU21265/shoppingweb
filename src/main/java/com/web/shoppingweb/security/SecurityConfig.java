@@ -96,9 +96,9 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/", "/catalog", "/products/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers(
                         "/profile",
-                        "/dashboard",
                         "/account/**",
                         "/saved",
                         "/saved/**",
@@ -116,7 +116,12 @@ public class SecurityConfig {
             .formLogin(login -> login
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login")
-                .defaultSuccessUrl("/dashboard", true)
+                .successHandler((request, response, authentication) -> {
+                    String targetUrl = SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER")
+                            ? "/dashboard"
+                            : "/profile";
+                    response.sendRedirect(targetUrl);
+                })
                 .failureUrl("/auth/login?error=true")
                 .permitAll()
             )

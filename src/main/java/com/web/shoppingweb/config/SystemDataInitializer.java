@@ -2,7 +2,10 @@ package com.web.shoppingweb.config;
 
 import java.math.BigDecimal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +25,10 @@ import com.web.shoppingweb.repository.RoleRepository;
 import com.web.shoppingweb.repository.UserRepository;
 
 @Component
+@ConditionalOnProperty(name = "app.seed.system-data", havingValue = "true")
 public class SystemDataInitializer implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(SystemDataInitializer.class);
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -47,6 +53,11 @@ public class SystemDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (hasExistingData()) {
+            log.info("Skipping SystemDataInitializer because existing database records were detected.");
+            return;
+        }
+
         ensureRole("ADMIN", "Administrator");
         ensureRole("CUSTOMER", "Customer");
         ensureRole("SELLER", "Seller");
@@ -54,7 +65,7 @@ public class SystemDataInitializer implements CommandLineRunner {
         ensureDemoSeller();
         ensureCatalogCategories();
         ensureDemoProducts();
-        ensureDefaultVariants();
+        log.info("System demo data has been initialized.");
     }
 
     private void ensureRole(String code, String name) {
@@ -166,7 +177,8 @@ public class SystemDataInitializer implements CommandLineRunner {
         product.setActive(true);
         product.setStatus(ProductStatus.ACTIVE);
         product.setCurrency("VND");
-        productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        ensureDefaultVariant(savedProduct);
     }
 
     private void ensureCatalogCategories() {
@@ -188,20 +200,26 @@ public class SystemDataInitializer implements CommandLineRunner {
         return category.name().toLowerCase().replace('_', '-');
     }
 
-    private void ensureDefaultVariants() {
-        for (Product product : productRepository.findAll()) {
-            if (productVariantRepository.existsByProduct(product)) {
-                continue;
-            }
-
-            ProductVariant variant = new ProductVariant();
-            variant.setProduct(product);
-            variant.setSku("P" + product.getId() + "-DEFAULT");
-            variant.setPriceAmount(product.getPrice().movePointRight(2).longValueExact());
-            variant.setStockQty(100);
-            variant.setDefault(true);
-            variant.setStatus(ProductVariantStatus.ACTIVE);
-            productVariantRepository.save(variant);
+    private void ensureDefaultVariant(Product product) {
+        if (productVariantRepository.existsByProduct(product)) {
+            return;
         }
+
+        ProductVariant variant = new ProductVariant();
+        variant.setProduct(product);
+        variant.setSku("P" + product.getId() + "-DEFAULT");
+        variant.setPriceAmount(product.getPrice().movePointRight(2).longValueExact());
+        variant.setStockQty(100);
+        variant.setDefault(true);
+        variant.setStatus(ProductVariantStatus.ACTIVE);
+        productVariantRepository.save(variant);
+    }
+
+    private boolean hasExistingData() {
+        return roleRepository.count() > 0
+                || userRepository.count() > 0
+                || categoryRepository.count() > 0
+                || productRepository.count() > 0
+                || productVariantRepository.count() > 0;
     }
 }

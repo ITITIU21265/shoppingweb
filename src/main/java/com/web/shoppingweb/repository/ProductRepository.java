@@ -3,6 +3,8 @@ package com.web.shoppingweb.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,7 +18,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(ProductCategory category);
 
+    Page<Product> findByActiveTrueOrderByFeaturedDescCreatedAtDesc(Pageable pageable);
+
+    Page<Product> findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(ProductCategory category, Pageable pageable);
+
+    List<Product> findBySeller_UsernameOrderByCreatedAtDesc(String username);
+
+    List<Product> findTop5BySeller_UsernameOrderByCreatedAtDesc(String username);
+
     Optional<Product> findBySlugAndActiveTrue(String slug);
 
     boolean existsBySlug(String slug);
+
+    long countBySeller_Username(String username);
+
+    long countBySeller_UsernameAndFeaturedTrue(String username);
 }

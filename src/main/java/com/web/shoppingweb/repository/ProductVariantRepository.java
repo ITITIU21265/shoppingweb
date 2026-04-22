@@ -1,6 +1,7 @@
 package com.web.shoppingweb.repository;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,14 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     Optional<ProductVariant> findByProductAndIsDefaultTrue(Product product);
 
     boolean existsByProduct(Product product);
+
+    long countByProduct_Seller_UsernameAndStockQtyLessThanEqualAndStatus(String username,
+                                                                         Integer stockQty,
+                                                                         ProductVariantStatus status);
+
+    List<ProductVariant> findTop5ByProduct_Seller_UsernameAndStockQtyLessThanEqualAndStatusOrderByStockQtyAscIdAsc(
+            String username,
+            Integer stockQty,
+            ProductVariantStatus status
+    );
 }

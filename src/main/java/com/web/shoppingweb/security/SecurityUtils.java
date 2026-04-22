@@ -1,5 +1,7 @@
 package com.web.shoppingweb.security;
 
+import java.util.Arrays;
+
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,5 +35,19 @@ public final class SecurityUtils {
         }
 
         return username;
+    }
+
+    public static boolean hasAnyRole(Authentication authentication, String... roles) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .anyMatch(authority -> Arrays.stream(roles)
+                        .map(role -> "ROLE_" + role.toUpperCase())
+                        .anyMatch(authority::equals));
     }
 }

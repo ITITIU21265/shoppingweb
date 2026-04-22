@@ -1,7 +1,7 @@
 package com.web.shoppingweb.controller.web;
 
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -55,14 +55,12 @@ public class ViewModelAdvice {
 
     @ModelAttribute("canManageProducts")
     public boolean canManageProducts(Authentication authentication) {
-        if (!signedIn(authentication)) {
-            return false;
-        }
+        return SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER");
+    }
 
-        Set<String> authorities = authentication.getAuthorities().stream()
-                .map(grantedAuthority -> grantedAuthority.getAuthority())
-                .collect(java.util.stream.Collectors.toSet());
-        return authorities.contains("ROLE_ADMIN") || authorities.contains("ROLE_SELLER");
+    @ModelAttribute("hasDashboardAccess")
+    public boolean hasDashboardAccess(Authentication authentication) {
+        return SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER");
     }
 
     @ModelAttribute("catalogCategories")
