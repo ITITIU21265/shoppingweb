@@ -3,7 +3,7 @@ package com.web.shoppingweb.service;
 import java.util.List;
 import java.util.Set;
 
-import com.web.shoppingweb.entity.Product;
+import com.web.shoppingweb.entity.product.Product;
 
 public interface SavedService {
 

@@ -9,20 +9,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.web.shoppingweb.entity.Product;
-import com.web.shoppingweb.entity.ProductCategory;
-import com.web.shoppingweb.entity.ProductStatus;
-import com.web.shoppingweb.entity.ProductVariant;
-import com.web.shoppingweb.entity.ProductVariantStatus;
-import com.web.shoppingweb.entity.Role;
-import com.web.shoppingweb.entity.User;
-import com.web.shoppingweb.entity.UserStatus;
-import com.web.shoppingweb.entity.CategoryEntity;
-import com.web.shoppingweb.repository.CategoryRepository;
-import com.web.shoppingweb.repository.ProductRepository;
-import com.web.shoppingweb.repository.ProductVariantRepository;
-import com.web.shoppingweb.repository.RoleRepository;
-import com.web.shoppingweb.repository.UserRepository;
+import com.web.shoppingweb.entity.product.Product;
+import com.web.shoppingweb.entity.product.ProductCategory;
+import com.web.shoppingweb.entity.product.ProductStatus;
+import com.web.shoppingweb.entity.product.ProductVariant;
+import com.web.shoppingweb.entity.product.ProductVariantStatus;
+import com.web.shoppingweb.entity.user.Role;
+import com.web.shoppingweb.entity.user.User;
+import com.web.shoppingweb.entity.user.UserStatus;
+import com.web.shoppingweb.entity.product.CategoryEntity;
+import com.web.shoppingweb.repository.product.CategoryRepository;
+import com.web.shoppingweb.repository.product.ProductRepository;
+import com.web.shoppingweb.repository.product.ProductVariantRepository;
+import com.web.shoppingweb.repository.user.RoleRepository;
+import com.web.shoppingweb.repository.user.UserRepository;
 
 @Component
 @ConditionalOnProperty(name = "app.seed.system-data", havingValue = "true")

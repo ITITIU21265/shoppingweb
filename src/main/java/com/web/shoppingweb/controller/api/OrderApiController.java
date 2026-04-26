@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.CheckoutRequestDTO;
-import com.web.shoppingweb.dto.OrderDetailDTO;
-import com.web.shoppingweb.dto.OrderSummaryDTO;
+import com.web.shoppingweb.dto.order.CheckoutRequestDTO;
+import com.web.shoppingweb.dto.order.OrderDetailDTO;
+import com.web.shoppingweb.dto.order.OrderSummaryDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.OrderService;
 

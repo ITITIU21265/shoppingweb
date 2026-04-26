@@ -2,7 +2,7 @@ package com.web.shoppingweb.service;
 
 import java.util.List;
 
-import com.web.shoppingweb.dto.CartSummaryDTO;
+import com.web.shoppingweb.dto.cart.CartSummaryDTO;
 
 public interface CartService {
 

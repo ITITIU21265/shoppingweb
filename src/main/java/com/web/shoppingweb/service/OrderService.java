@@ -2,9 +2,9 @@ package com.web.shoppingweb.service;
 
 import java.util.List;
 
-import com.web.shoppingweb.dto.CheckoutRequestDTO;
-import com.web.shoppingweb.dto.OrderDetailDTO;
-import com.web.shoppingweb.dto.OrderSummaryDTO;
+import com.web.shoppingweb.dto.order.CheckoutRequestDTO;
+import com.web.shoppingweb.dto.order.OrderDetailDTO;
+import com.web.shoppingweb.dto.order.OrderSummaryDTO;
 
 public interface OrderService {
 

@@ -50,4 +50,35 @@ public final class SecurityUtils {
                         .map(role -> "ROLE_" + role.toUpperCase())
                         .anyMatch(authority::equals));
     }
+
+    public static boolean hasRole(Authentication authentication, String role) {
+        return hasAnyRole(authentication, role);
+    }
+
+    public static boolean isAdmin(Authentication authentication) {
+        return hasRole(authentication, "ADMIN");
+    }
+
+    public static boolean isSeller(Authentication authentication) {
+        return hasRole(authentication, "SELLER");
+    }
+
+    public static boolean isCustomer(Authentication authentication) {
+        return hasRole(authentication, "CUSTOMER");
+    }
+
+    public static boolean hasDashboardAccess(Authentication authentication) {
+        return hasAnyRole(authentication, "ADMIN", "SELLER", "CUSTOMER");
+    }
+
+    public static String resolveDashboardTarget(Authentication authentication) {
+        if (!hasDashboardAccess(authentication)) {
+            return "/profile";
+        }
+        return "/dashboard?view=overview";
+    }
+
+    public static String resolvePostLoginTarget(Authentication authentication) {
+        return hasDashboardAccess(authentication) ? resolveDashboardTarget(authentication) : "/profile";
+    }
 }

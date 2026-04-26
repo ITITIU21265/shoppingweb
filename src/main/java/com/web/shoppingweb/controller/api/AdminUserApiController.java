@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.UpdateRoleDTO;
-import com.web.shoppingweb.dto.UserResponseDTO;
+import com.web.shoppingweb.dto.user.UpdateRoleDTO;
+import com.web.shoppingweb.dto.user.UserResponseDTO;
 import com.web.shoppingweb.service.UserService;
 
 import jakarta.validation.Valid;

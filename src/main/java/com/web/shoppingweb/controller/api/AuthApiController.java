@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.ForgotPasswordDTO;
-import com.web.shoppingweb.dto.LoginRequestDTO;
-import com.web.shoppingweb.dto.LoginResponseDTO;
-import com.web.shoppingweb.dto.RefreshTokenDTO;
-import com.web.shoppingweb.dto.RegisterRequestDTO;
-import com.web.shoppingweb.dto.ResetPasswordDTO;
-import com.web.shoppingweb.dto.UserResponseDTO;
+import com.web.shoppingweb.dto.auth.ForgotPasswordDTO;
+import com.web.shoppingweb.dto.auth.LoginRequestDTO;
+import com.web.shoppingweb.dto.auth.LoginResponseDTO;
+import com.web.shoppingweb.dto.auth.RefreshTokenDTO;
+import com.web.shoppingweb.dto.auth.RegisterRequestDTO;
+import com.web.shoppingweb.dto.auth.ResetPasswordDTO;
+import com.web.shoppingweb.dto.user.UserResponseDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.UserService;
 

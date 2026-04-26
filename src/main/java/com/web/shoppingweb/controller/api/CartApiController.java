@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.CartAddRequestDTO;
-import com.web.shoppingweb.dto.CartQuantityUpdateDTO;
-import com.web.shoppingweb.dto.CartSummaryDTO;
+import com.web.shoppingweb.dto.cart.CartAddRequestDTO;
+import com.web.shoppingweb.dto.cart.CartQuantityUpdateDTO;
+import com.web.shoppingweb.dto.cart.CartSummaryDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.CartService;
 

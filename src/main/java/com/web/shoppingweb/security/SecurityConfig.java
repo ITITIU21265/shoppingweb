@@ -16,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.web.shoppingweb.service.CustomUserDetailsService;
+import com.web.shoppingweb.service.impl.CustomUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
@@ -75,6 +75,8 @@ public class SecurityConfig {
                         "/api/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/products").hasAnyRole("ADMIN", "SELLER")
+                .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "SELLER")
+                .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -96,7 +98,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/", "/catalog", "/products/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "SELLER")
+                .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "SELLER", "CUSTOMER")
                 .requestMatchers(
                         "/profile",
                         "/account/**",
@@ -116,12 +118,8 @@ public class SecurityConfig {
             .formLogin(login -> login
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login")
-                .successHandler((request, response, authentication) -> {
-                    String targetUrl = SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER")
-                            ? "/dashboard"
-                            : "/profile";
-                    response.sendRedirect(targetUrl);
-                })
+                .successHandler((request, response, authentication) ->
+                        response.sendRedirect(SecurityUtils.resolvePostLoginTarget(authentication)))
                 .failureUrl("/auth/login?error=true")
                 .permitAll()
             )

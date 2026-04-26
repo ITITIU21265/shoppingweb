@@ -26,7 +26,7 @@
         <a href="/catalog">Catalog</a>
         <a class="is-active" href="/orders">Orders</a>
         <a href="/profile">Profile</a>
-        <a th:if="${hasDashboardAccess}" href="/dashboard">Dashboard</a>
+        <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">

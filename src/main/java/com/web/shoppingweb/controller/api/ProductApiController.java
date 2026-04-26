@@ -7,18 +7,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.ProductFormDTO;
-import com.web.shoppingweb.dto.ProductResponseDTO;
-import com.web.shoppingweb.entity.Product;
-import com.web.shoppingweb.entity.ProductCategory;
+import com.web.shoppingweb.dto.product.ProductFormDTO;
+import com.web.shoppingweb.dto.product.ProductResponseDTO;
+import com.web.shoppingweb.entity.product.Product;
+import com.web.shoppingweb.entity.product.ProductCategory;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.ProductService;
 
@@ -57,6 +58,30 @@ public class ProductApiController {
                 SecurityUtils.requireCurrentUsername(authentication)
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(created));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
+    public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable Long id,
+                                                            @Valid @RequestBody ProductFormDTO productForm,
+                                                            Authentication authentication) {
+        Product updated = productService.updateProduct(
+                id,
+                productForm,
+                SecurityUtils.requireCurrentUsername(authentication)
+        );
+        return ResponseEntity.ok(toResponse(updated));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id,
+                                              Authentication authentication) {
+        productService.deleteProduct(
+                id,
+                SecurityUtils.requireCurrentUsername(authentication)
+        );
+        return ResponseEntity.noContent().build();
     }
 
     private ProductResponseDTO toResponse(Product product) {

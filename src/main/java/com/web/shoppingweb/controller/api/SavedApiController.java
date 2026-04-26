@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.shoppingweb.dto.ProductResponseDTO;
-import com.web.shoppingweb.dto.SavedItemRequestDTO;
-import com.web.shoppingweb.dto.SavedToggleResponseDTO;
-import com.web.shoppingweb.entity.Product;
+import com.web.shoppingweb.dto.product.ProductResponseDTO;
+import com.web.shoppingweb.dto.saved.SavedItemRequestDTO;
+import com.web.shoppingweb.dto.saved.SavedToggleResponseDTO;
+import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.SavedService;
 

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import com.web.shoppingweb.dto.ErrorResponseDTO;
+import com.web.shoppingweb.dto.common.ErrorResponseDTO;
 import com.web.shoppingweb.exception.DuplicateResourceException;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
 

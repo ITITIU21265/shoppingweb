@@ -26,7 +26,7 @@
         <a href="/catalog">Catalog</a>
         <a href="/orders">Orders</a>
         <a class="is-active" href="/profile">Profile</a>
-        <a th:if="${hasDashboardAccess}" href="/dashboard">Dashboard</a>
+        <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
@@ -92,7 +92,7 @@
               <h3>Order History</h3>
               <p>Open previously confirmed orders and inspect the item snapshots captured during checkout.</p>
             </a>
-            <a th:if="${hasDashboardAccess}" class="action-tile" href="/dashboard">
+            <a th:if="${hasDashboardAccess}" class="action-tile" th:href="${dashboardUrl}">
               <h3>Open Dashboard</h3>
               <p>Edit profile fields, change password, and manage account settings from the server-rendered dashboard.</p>
             </a>

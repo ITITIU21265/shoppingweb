@@ -1,6 +1,6 @@
 package com.web.shoppingweb.security;
 
-import com.web.shoppingweb.service.CustomUserDetailsService;
+import com.web.shoppingweb.service.impl.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

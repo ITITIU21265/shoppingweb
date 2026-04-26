@@ -9,8 +9,8 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.web.shoppingweb.entity.UserStatus;
-import com.web.shoppingweb.repository.UserRepository;
+import com.web.shoppingweb.entity.user.UserStatus;
+import com.web.shoppingweb.repository.user.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

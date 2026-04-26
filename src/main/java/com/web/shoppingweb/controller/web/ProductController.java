@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.web.shoppingweb.dto.ProductFormDTO;
-import com.web.shoppingweb.entity.Product;
-import com.web.shoppingweb.entity.ProductCategory;
+import com.web.shoppingweb.dto.product.ProductFormDTO;
+import com.web.shoppingweb.entity.product.Product;
+import com.web.shoppingweb.entity.product.ProductCategory;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.ProductService;
 

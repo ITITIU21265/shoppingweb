@@ -9,8 +9,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-import com.web.shoppingweb.dto.ProductFormDTO;
-import com.web.shoppingweb.dto.UserResponseDTO;
+import com.web.shoppingweb.dto.product.ProductFormDTO;
+import com.web.shoppingweb.dto.user.UserResponseDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.CartService;
 import com.web.shoppingweb.service.ProductService;
@@ -60,7 +60,15 @@ public class ViewModelAdvice {
 
     @ModelAttribute("hasDashboardAccess")
     public boolean hasDashboardAccess(Authentication authentication) {
-        return SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER");
+        return SecurityUtils.hasDashboardAccess(authentication);
+    }
+
+    @ModelAttribute("dashboardUrl")
+    public String dashboardUrl(Authentication authentication) {
+        if (!hasDashboardAccess(authentication)) {
+            return null;
+        }
+        return SecurityUtils.resolveDashboardTarget(authentication);
     }
 
     @ModelAttribute("catalogCategories")

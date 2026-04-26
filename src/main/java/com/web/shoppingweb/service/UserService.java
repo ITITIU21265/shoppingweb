@@ -2,7 +2,8 @@ package com.web.shoppingweb.service;
 
 import java.util.List;
 
-import com.web.shoppingweb.dto.*;     
+import com.web.shoppingweb.dto.auth.*;
+import com.web.shoppingweb.dto.user.*;     
 
 public interface UserService {
 

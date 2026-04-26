@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.web.shoppingweb.dto.CartSummaryDTO;
-import com.web.shoppingweb.dto.CheckoutRequestDTO;
-import com.web.shoppingweb.dto.OrderDetailDTO;
+import com.web.shoppingweb.dto.cart.CartSummaryDTO;
+import com.web.shoppingweb.dto.order.CheckoutRequestDTO;
+import com.web.shoppingweb.dto.order.OrderDetailDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.CartService;
 import com.web.shoppingweb.service.OrderService;

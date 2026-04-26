@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.web.shoppingweb.dto.ForgotPasswordDTO;
-import com.web.shoppingweb.dto.RegisterRequestDTO;
-import com.web.shoppingweb.dto.ResetPasswordDTO;
+import com.web.shoppingweb.dto.auth.ForgotPasswordDTO;
+import com.web.shoppingweb.dto.auth.RegisterRequestDTO;
+import com.web.shoppingweb.dto.auth.ResetPasswordDTO;
 import com.web.shoppingweb.exception.DuplicateResourceException;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.UserService;
@@ -42,9 +42,7 @@ public class AuthController {
         if (authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
-            return SecurityUtils.hasAnyRole(authentication, "ADMIN", "SELLER")
-                    ? "redirect:/dashboard"
-                    : "redirect:/profile";
+            return "redirect:" + SecurityUtils.resolvePostLoginTarget(authentication);
         }
 
         if (!model.containsAttribute("registerRequest")) {
