@@ -388,12 +388,24 @@ public class UserServiceImpl implements UserService {
         }
         for (String code : java.util.List.of("ADMIN", "SELLER", "CUSTOMER")) {
             boolean match = user.getRoles().stream()
-                    .anyMatch(role -> code.equalsIgnoreCase(role.getCode()));
+                    .anyMatch(role -> code.equalsIgnoreCase(normalizeRoleCode(role.getCode())));
             if (match) {
                 return code;
             }
         }
-        return user.getRoles().iterator().next().getCode();
+        return normalizeRoleCode(user.getRoles().iterator().next().getCode());
+    }
+
+    private String normalizeRoleCode(String roleCode) {
+        if (roleCode == null || roleCode.isBlank()) {
+            return "CUSTOMER";
+        }
+
+        String normalized = roleCode.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("ROLE_")) {
+            return normalized.substring("ROLE_".length());
+        }
+        return normalized;
     }
 
     private RefreshToken createRefreshToken(User user) {

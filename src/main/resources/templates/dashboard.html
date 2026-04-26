@@ -905,14 +905,14 @@
                     <th>ID</th>
                     <th>Account</th>
                     <th>Email</th>
-                    <th>
-                      <div class="dashboard-table-filter-head">
+                    <th class="dashboard-filter-th">
+                      <div class="dashboard-table-filter-head relative">
                         <span>Role</span>
-                        <details class="dashboard-column-filter" th:classappend="${managedUserRoleFilter != 'all'} ? ' has-active'">
+                        <details class="dashboard-column-filter relative" th:classappend="${managedUserRoleFilter != 'all'} ? ' has-active'">
                           <summary class="dashboard-filter-icon">
                             <span class="sr-only">Filter by role</span>
                           </summary>
-                          <div class="dashboard-column-filter-menu">
+                          <div class="dashboard-column-filter-menu absolute z-50 mt-2">
                             <a
                               class="dashboard-column-filter-link"
                               th:classappend="${managedUserRoleFilter == 'all'} ? ' is-active'"
@@ -935,14 +935,14 @@
                         </details>
                       </div>
                     </th>
-                    <th>
-                      <div class="dashboard-table-filter-head">
+                    <th class="dashboard-filter-th">
+                      <div class="dashboard-table-filter-head relative">
                         <span>Status</span>
-                        <details class="dashboard-column-filter" th:classappend="${managedUserStatusFilter != 'all'} ? ' has-active'">
+                        <details class="dashboard-column-filter relative" th:classappend="${managedUserStatusFilter != 'all'} ? ' has-active'">
                           <summary class="dashboard-filter-icon">
                             <span class="sr-only">Filter by status</span>
                           </summary>
-                          <div class="dashboard-column-filter-menu">
+                          <div class="dashboard-column-filter-menu absolute z-50 mt-2">
                             <a
                               class="dashboard-column-filter-link"
                               th:classappend="${managedUserStatusFilter == 'all'} ? ' is-active'"
@@ -971,7 +971,7 @@
                         </details>
                       </div>
                     </th>
-                    <th>Role Action</th>
+                    <th>Seller Application</th>
                     <th>Status Action</th>
                   </tr>
                 </thead>
@@ -999,19 +999,19 @@
                         ACTIVE
                       </span>
                     </td>
-                    <td>
-                      <form class="dashboard-management-form" method="post" th:action="@{/admin/users/{id}/role(id=${user.id})}">
-                        <select class="dashboard-role-select" name="roleCode">
-                          <option value="CUSTOMER" th:selected="${user.role == 'CUSTOMER'}">CUSTOMER</option>
-                          <option value="SELLER" th:selected="${user.role == 'SELLER'}">SELLER</option>
-                        </select>
-                        <input type="hidden" name="userQuery" th:value="${managedUserQuery}" />
-                        <input type="hidden" name="userRoleFilter" th:value="${managedUserRoleFilter}" />
-                        <input type="hidden" name="userStatusFilter" th:value="${managedUserStatusFilter}" />
-                        <input type="hidden" name="userPage" th:value="${managedUserPage}" />
-                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        <button class="btn btn-primary" type="submit">Update</button>
-                      </form>
+                    <td th:with="pendingSupplier=${pendingSupplierByUserId[user.id]}, approvedSupplier=${approvedSupplierByUserId[user.id]}">
+                      <a
+                        th:if="${pendingSupplier != null}"
+                        class="btn btn-outline-accent btn-compact"
+                        th:href="@{/admin/suppliers/review/{userId}(userId=${user.id})}">
+                        Review Application
+                      </a>
+                      <span
+                        th:if="${pendingSupplier == null and (user.role == 'SELLER' or approvedSupplier != null)}"
+                        class="dashboard-tier-badge tone-green">
+                        Approved
+                      </span>
+                      <span th:if="${pendingSupplier == null and user.role != 'SELLER' and approvedSupplier == null}" class="product-meta">-</span>
                     </td>
                     <td>
                       <form class="dashboard-management-form" method="post" th:action="@{/admin/users/{id}/status(id=${user.id})}">

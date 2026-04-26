@@ -43,7 +43,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
         return user.getRoles()
                 .stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getCode()))
+                .map(role -> new SimpleGrantedAuthority(toAuthority(role.getCode())))
                 .toList();
+    }
+
+    private String toAuthority(String roleCode) {
+        String normalizedCode = roleCode == null ? "" : roleCode.trim().toUpperCase();
+        if (normalizedCode.startsWith("ROLE_")) {
+            return normalizedCode;
+        }
+        return "ROLE_" + normalizedCode;
     }
 }

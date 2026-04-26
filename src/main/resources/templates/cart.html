@@ -37,6 +37,7 @@
           <div class="user-menu-panel">
             <a href="/profile">My Account</a>
             <a href="/orders">Orders</a>
+            <a th:if="${currentUser != null and currentUser.role == 'CUSTOMER'}" href="/supplier/register">Register as a Seller</a>
             <form method="post" action="/auth/logout">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
               <button type="submit">Sign Out</button>

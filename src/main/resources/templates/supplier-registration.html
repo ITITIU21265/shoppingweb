@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register as a Seller | StyleHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="app-body">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark"></div>
+        <div>
+          <a class="brand-name" href="/catalog">StyleHub</a>
+          <p class="brand-subtitle">Seller Registration</p>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="/catalog">Catalog</a>
+      </nav>
+
+      <div class="header-user">
+        <a class="header-shortcut" href="/cart">
+          <span>Cart</span>
+          <strong th:text="${cartItemCount}">0</strong>
+        </a>
+        <details class="user-menu">
+          <summary class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</summary>
+          <div class="user-menu-panel">
+            <a href="/profile">My Account</a>
+            <a href="/orders">Orders</a>
+            <a th:if="${currentUser != null and currentUser.role == 'CUSTOMER'}" href="/supplier/register">Register as a Seller</a>
+            <form method="post" action="/auth/logout">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit">Sign Out</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <main class="supplier-registration-shell">
+      <section class="supplier-registration-card">
+        <div class="supplier-registration-copy">
+          <p class="eyebrow">Marketplace seller</p>
+          <h1>Register as a Seller</h1>
+          <p>Submit your store information so the admin team can review your seller application.</p>
+        </div>
+
+        <div th:if="${errorMessage}" class="form-alert" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage}" class="form-alert success" th:text="${successMessage}"></div>
+
+        <section th:if="${pendingReview}" class="supplier-review-state">
+          <h2>Your Store application is currently under review by the Admin. Please wait!</h2>
+          <p th:if="${supplier != null}" th:text="'Submitted store: ' + ${supplier.name}">Submitted store</p>
+          <a class="btn btn-primary" href="/catalog">Back to Catalog</a>
+        </section>
+
+        <form th:if="${!pendingReview}" class="supplier-registration-form" method="post" th:object="${supplierRegistrationForm}" action="/supplier/register">
+          <label class="field">
+            <span>Store Name</span>
+            <input th:field="*{name}" type="text" placeholder="StyleHub Store" />
+            <small class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></small>
+          </label>
+
+          <label class="field">
+            <span>Phone Number</span>
+            <input th:field="*{phone}" type="tel" placeholder="+84 901 234 567" />
+            <small class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></small>
+          </label>
+
+          <label class="field">
+            <span>Contact Email</span>
+            <input th:field="*{email}" type="email" placeholder="store@example.com" />
+            <small class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></small>
+          </label>
+
+          <label class="field">
+            <span>Address</span>
+            <textarea th:field="*{address}" placeholder="Store pickup or business address"></textarea>
+            <small class="field-error" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></small>
+          </label>
+
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="form-footer">
+            <button class="btn btn-primary supplier-submit-button" type="submit">Submit Application</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

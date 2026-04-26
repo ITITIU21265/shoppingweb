@@ -47,8 +47,7 @@ public final class SecurityUtils {
         return authentication.getAuthorities().stream()
                 .map(grantedAuthority -> grantedAuthority.getAuthority())
                 .anyMatch(authority -> Arrays.stream(roles)
-                        .map(role -> "ROLE_" + role.toUpperCase())
-                        .anyMatch(authority::equals));
+                        .anyMatch(role -> authorityMatches(authority, role)));
     }
 
     public static boolean hasRole(Authentication authentication, String role) {
@@ -79,9 +78,34 @@ public final class SecurityUtils {
     }
 
     public static String resolvePostLoginTarget(Authentication authentication) {
+        if (isAdmin(authentication) || isSeller(authentication)) {
+            return "/dashboard?view=overview";
+        }
         if (isCustomer(authentication)) {
             return "/catalog";
         }
-        return hasDashboardAccess(authentication) ? resolveDashboardTarget(authentication) : "/profile";
+        return "/profile";
+    }
+
+    private static boolean authorityMatches(String authority, String role) {
+        if (authority == null || role == null) {
+            return false;
+        }
+
+        String normalizedAuthority = authority.trim().toUpperCase();
+        String normalizedRole = role.trim().toUpperCase();
+        String roleAuthority = normalizedRole.startsWith("ROLE_") ? normalizedRole : "ROLE_" + normalizedRole;
+
+        return normalizedAuthority.equals(roleAuthority)
+                || normalizedAuthority.equals(normalizedRole)
+                || stripRolePrefix(normalizedAuthority).equals(stripRolePrefix(normalizedRole));
+    }
+
+    private static String stripRolePrefix(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase();
+        while (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring("ROLE_".length());
+        }
+        return normalized;
     }
 }

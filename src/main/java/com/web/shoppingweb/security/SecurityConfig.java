@@ -102,6 +102,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/profile",
                         "/account/**",
+                        "/supplier/**",
                         "/saved",
                         "/saved/**",
                         "/cart",

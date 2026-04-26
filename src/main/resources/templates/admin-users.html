@@ -59,7 +59,7 @@
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th>Role Action</th>
+                <th>Seller Application</th>
                 <th>Status Action</th>
               </tr>
             </thead>
@@ -74,15 +74,8 @@
                 <td th:text="${user.role}">CUSTOMER</td>
                 <td th:text="${user.status}">ACTIVE</td>
                 <td>
-                  <form method="post" th:action="@{/admin/users/{id}/role(id=${user.id})}">
-                    <select name="roleCode">
-                      <option value="CUSTOMER">CUSTOMER</option>
-                      <option value="SELLER">SELLER</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
-                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <button class="btn btn-primary" type="submit">Update</button>
-                  </form>
+                  <span th:if="${user.role == 'SELLER'}" class="dashboard-tier-badge tone-green">Approved</span>
+                  <span th:if="${user.role != 'SELLER'}" class="product-meta">Review applications from Dashboard &gt; Manage Users</span>
                 </td>
                 <td>
                   <form method="post" th:action="@{/admin/users/{id}/status(id=${user.id})}">

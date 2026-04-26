@@ -25,10 +25,13 @@ import com.web.shoppingweb.entity.order.OrderStatus;
 import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.entity.product.ProductVariant;
 import com.web.shoppingweb.entity.product.ProductVariantStatus;
+import com.web.shoppingweb.entity.supplier.Supplier;
+import com.web.shoppingweb.entity.supplier.SupplierStatus;
 import com.web.shoppingweb.repository.order.OrderItemRepository;
 import com.web.shoppingweb.repository.order.OrderRepository;
 import com.web.shoppingweb.repository.product.ProductRepository;
 import com.web.shoppingweb.repository.product.ProductVariantRepository;
+import com.web.shoppingweb.repository.supplier.SupplierRepository;
 import com.web.shoppingweb.service.ProductService;
 import com.web.shoppingweb.service.UserService;
 
@@ -49,19 +52,22 @@ public class AdminDashboardModelBuilder {
     private final ProductVariantRepository productVariantRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final SupplierRepository supplierRepository;
 
     public AdminDashboardModelBuilder(UserService userService,
                                       ProductService productService,
                                       ProductRepository productRepository,
                                       ProductVariantRepository productVariantRepository,
                                       OrderRepository orderRepository,
-                                      OrderItemRepository orderItemRepository) {
+                                      OrderItemRepository orderItemRepository,
+                                      SupplierRepository supplierRepository) {
         this.userService = userService;
         this.productService = productService;
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     public void populate(Model model, DashboardRequest request) {
@@ -78,6 +84,9 @@ public class AdminDashboardModelBuilder {
         List<UserResponseDTO> managedUsers = users.stream()
                 .filter(user -> !"ADMIN".equalsIgnoreCase(user.getRole()))
                 .toList();
+        Map<Long, Supplier> latestSupplierByUserId = buildLatestSupplierByUserId();
+        Map<Long, Supplier> pendingSupplierByUserId = filterSuppliersByStatus(latestSupplierByUserId, SupplierStatus.PENDING);
+        Map<Long, Supplier> approvedSupplierByUserId = filterSuppliersByStatus(latestSupplierByUserId, SupplierStatus.APPROVED);
         List<Order> allOrders = orderRepository.findAll().stream()
                 .sorted(Comparator.comparing(Order::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
@@ -173,6 +182,9 @@ public class AdminDashboardModelBuilder {
         model.addAttribute("customerCount", customerUsers.size());
         model.addAttribute("sellerCount", sellerUsers.size());
         model.addAttribute("dashboardManagedUsers", pagedManagedUsers);
+        model.addAttribute("latestSupplierByUserId", latestSupplierByUserId);
+        model.addAttribute("pendingSupplierByUserId", pendingSupplierByUserId);
+        model.addAttribute("approvedSupplierByUserId", approvedSupplierByUserId);
         model.addAttribute("managedUserQuery", managedUserQuery);
         model.addAttribute("managedUserRoleFilter", managedUserRoleFilter);
         model.addAttribute("managedUserStatusFilter", managedUserStatusFilter);
@@ -217,6 +229,28 @@ public class AdminDashboardModelBuilder {
 
         String normalized = requestedSegment.trim().toLowerCase(Locale.ROOT);
         return Set.of("all", "vip", "new_no_order", "active").contains(normalized) ? normalized : "all";
+    }
+
+    private Map<Long, Supplier> buildLatestSupplierByUserId() {
+        Map<Long, Supplier> suppliersByUserId = new LinkedHashMap<>();
+        supplierRepository.findAll().stream()
+                .filter(supplier -> supplier.getSeller() != null && supplier.getSeller().getId() != null)
+                .sorted(Comparator.comparing(
+                        Supplier::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
+                .forEach(supplier -> suppliersByUserId.putIfAbsent(supplier.getSeller().getId(), supplier));
+        return suppliersByUserId;
+    }
+
+    private Map<Long, Supplier> filterSuppliersByStatus(Map<Long, Supplier> suppliersByUserId, SupplierStatus status) {
+        Map<Long, Supplier> filteredSuppliers = new LinkedHashMap<>();
+        suppliersByUserId.forEach((userId, supplier) -> {
+            if (supplier.getStatus() == status) {
+                filteredSuppliers.put(userId, supplier);
+            }
+        });
+        return filteredSuppliers;
     }
 
     private String normalizeManagedUserRoleFilter(String requestedRoleFilter) {
