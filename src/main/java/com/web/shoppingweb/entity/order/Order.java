@@ -27,6 +27,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -34,10 +35,6 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "seller_id", nullable = false)
-    private User seller;
 
     @Column(name = "order_number", nullable = false, unique = true, length = 40)
     private String orderNumber;
@@ -100,14 +97,6 @@ public class Order {
 
     public void setCart(Cart cart) {
         this.cart = cart;
-    }
-
-    public User getSeller() {
-        return seller;
-    }
-
-    public void setSeller(User seller) {
-        this.seller = seller;
     }
 
     public String getOrderNumber() {

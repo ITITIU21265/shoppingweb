@@ -24,25 +24,26 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/orders">Orders</a>
         <a class="is-active" href="/profile">Profile</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
-        <a class="header-shortcut" href="/saved">
-          <span>Saved</span>
-          <strong th:text="${savedItemCount}">0</strong>
-        </a>
         <a class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
         </a>
-        <span class="user-chip" th:text="${#strings.substring(profileUser.fullName ?: profileUser.username, 0, 1)}">U</span>
-        <form method="post" action="/auth/logout">
-          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-          <button class="btn btn-ghost" type="submit">Sign Out</button>
-        </form>
+        <details class="user-menu">
+          <summary class="user-chip" th:text="${#strings.substring(profileUser.fullName ?: profileUser.username, 0, 1)}">U</summary>
+          <div class="user-menu-panel">
+            <a href="/profile">My Account</a>
+            <a href="/orders">Orders</a>
+            <form method="post" action="/auth/logout">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit">Sign Out</button>
+            </form>
+          </div>
+        </details>
       </div>
     </header>
 
@@ -54,8 +55,7 @@
         <div>
           <p class="eyebrow">Member area</p>
           <h1 th:text="'Welcome back, ' + ${profileUser.fullName} + '!'">Welcome back</h1>
-          <p th:if="${hasDashboardAccess}">Use this page as the customer-facing summary while account changes stay in the dashboard.</p>
-          <p th:if="${!hasDashboardAccess}">Use this page to review and manage your customer account details directly.</p>
+          <p>Use this page to review and manage your storefront account details directly.</p>
         </div>
       </section>
 
@@ -84,10 +84,6 @@
               <h3>Browse Catalog</h3>
               <p>Explore the database-backed clothing catalog and open product detail pages.</p>
             </a>
-            <a class="action-tile" href="/saved">
-              <h3>Saved Items</h3>
-              <p>Review saved fashion picks and move them into the cart when you are ready to buy.</p>
-            </a>
             <a class="action-tile" href="/orders">
               <h3>Order History</h3>
               <p>Open previously confirmed orders and inspect the item snapshots captured during checkout.</p>
@@ -104,7 +100,7 @@
         </section>
       </section>
 
-      <section th:if="${!hasDashboardAccess}" class="profile-settings-stack">
+      <section class="profile-settings-stack">
         <section class="panel-card">
           <div class="panel-header">
             <div>
@@ -144,7 +140,7 @@
               <h2>Change Password</h2>
             </div>
 
-            <form class="settings-form" method="post" th:object="${changePasswordForm}" action="/profile/password">
+            <form class="settings-form" method="post" th:object="${changePasswordForm}" action="/account/password">
               <label class="field">
                 <span>Current Password</span>
                 <input th:field="*{currentPassword}" type="password" />

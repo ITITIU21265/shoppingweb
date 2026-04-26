@@ -177,7 +177,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order();
         order.setUser(customer);
         order.setCart(cart);
-        order.setSeller(group.seller());
         order.setOrderNumber(generateOrderNumber());
         order.setStatus(OrderStatus.CONFIRMED);
         order.setCustomerName(customer.getFullName());
@@ -212,6 +211,7 @@ public class OrderServiceImpl implements OrderService {
         order.setSubtotalAmount(subtotalAmount);
         Order savedOrder = orderRepository.save(order);
         orderItemRepository.saveAll(orderItems);
+
         return toDetail(savedOrder, orderItems);
     }
 

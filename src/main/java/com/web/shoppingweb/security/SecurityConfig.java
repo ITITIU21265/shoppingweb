@@ -98,7 +98,7 @@ public class SecurityConfig {
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
                 .requestMatchers("/", "/catalog", "/products/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "SELLER", "CUSTOMER")
+                .requestMatchers("/dashboard", "/dashboard/**").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers(
                         "/profile",
                         "/account/**",
@@ -130,7 +130,8 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
             )
             .exceptionHandling(exception -> exception
-                .accessDeniedPage("/catalog?denied=true")
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                        response.sendRedirect("/catalog?denied=true"))
             )
             .authenticationProvider(authenticationProvider())
             .addFilterAfter(userStatusEnforcementFilter, UsernamePasswordAuthenticationFilter.class);

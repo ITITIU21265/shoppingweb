@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.CartService;
+import com.web.shoppingweb.service.SavedService;
 
 @Controller
 @RequestMapping("/cart")
@@ -20,15 +21,18 @@ import com.web.shoppingweb.service.CartService;
 public class CartController {
 
     private final CartService cartService;
+    private final SavedService savedService;
 
-    public CartController(CartService cartService) {
+    public CartController(CartService cartService, SavedService savedService) {
         this.cartService = cartService;
+        this.savedService = savedService;
     }
 
     @GetMapping
     public String cart(Authentication authentication, Model model) {
         String username = SecurityUtils.requireCurrentUsername(authentication);
         model.addAttribute("cartSummary", cartService.getActiveCart(username));
+        model.addAttribute("savedProducts", savedService.getSavedProducts(username));
         return "cart";
     }
 

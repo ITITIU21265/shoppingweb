@@ -68,17 +68,20 @@ public final class SecurityUtils {
     }
 
     public static boolean hasDashboardAccess(Authentication authentication) {
-        return hasAnyRole(authentication, "ADMIN", "SELLER", "CUSTOMER");
+        return hasAnyRole(authentication, "ADMIN", "SELLER");
     }
 
     public static String resolveDashboardTarget(Authentication authentication) {
         if (!hasDashboardAccess(authentication)) {
-            return "/profile";
+            return isCustomer(authentication) ? "/catalog" : "/profile";
         }
         return "/dashboard?view=overview";
     }
 
     public static String resolvePostLoginTarget(Authentication authentication) {
+        if (isCustomer(authentication)) {
+            return "/catalog";
+        }
         return hasDashboardAccess(authentication) ? resolveDashboardTarget(authentication) : "/profile";
     }
 }

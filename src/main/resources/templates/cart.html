@@ -24,25 +24,25 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/orders">Orders</a>
-        <a href="/profile">Profile</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
-        <a class="header-shortcut" href="/saved">
-          <span>Saved</span>
-          <strong th:text="${savedItemCount}">0</strong>
-        </a>
         <a class="header-shortcut is-active" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
         </a>
-        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
-        <form method="post" action="/auth/logout">
-          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-          <button class="btn btn-ghost" type="submit">Sign Out</button>
-        </form>
+        <details class="user-menu">
+          <summary class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</summary>
+          <div class="user-menu-panel">
+            <a href="/profile">My Account</a>
+            <a href="/orders">Orders</a>
+            <form method="post" action="/auth/logout">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit">Sign Out</button>
+            </form>
+          </div>
+        </details>
       </div>
     </header>
 
@@ -150,6 +150,52 @@
             <a class="btn btn-ghost btn-full" href="/catalog">Continue shopping</a>
           </div>
         </aside>
+      </section>
+
+      <section class="panel-card saved-cart-section">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Saved Items</p>
+            <h2>Sản phẩm bạn đã lưu</h2>
+          </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(savedProducts)}" class="empty-state saved-cart-empty">
+          <h3>Chưa có sản phẩm đã lưu.</h3>
+          <p>Nhấn Save trên sản phẩm trong catalog để lưu lại và mua sau.</p>
+          <a class="btn btn-primary" href="/catalog">Browse catalog</a>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(savedProducts)}" class="product-grid saved-cart-grid">
+          <article th:each="product : ${savedProducts}" class="product-card">
+            <a th:href="@{/products/{slug}(slug=${product.slug})}">
+              <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+            </a>
+            <div class="product-content">
+              <p class="product-meta">
+                <span th:text="${product.category.displayName}">Category</span>
+              </p>
+              <h2 class="product-title" th:text="${product.name}">Product Name</h2>
+              <p class="lead" th:text="${product.description}">Description</p>
+              <div class="product-footer product-actions-row">
+                <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+                <div class="product-action-buttons">
+                  <form method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
+                    <input type="hidden" name="redirectTo" value="/cart" />
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
+                  </form>
+                  <form method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
+                    <input type="hidden" name="redirectTo" value="/cart" />
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button class="btn btn-outline-accent btn-product-action" type="submit">Remove</button>
+                  </form>
+                  <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
       </section>
     </main>
     <script src="/js/cart-selection.js"></script>

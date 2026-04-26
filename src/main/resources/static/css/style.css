@@ -496,6 +496,64 @@ p {
   justify-content: center;
 }
 
+.user-menu {
+  position: relative;
+}
+
+.user-menu summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.user-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 190px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px rgba(41, 26, 15, 0.16);
+  display: none;
+  z-index: 60;
+}
+
+.user-menu[open] .user-menu-panel,
+.user-menu:hover .user-menu-panel {
+  display: grid;
+  gap: 4px;
+}
+
+.user-menu-panel a,
+.user-menu-panel button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  justify-content: flex-start;
+  padding: 11px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-menu-panel a:hover,
+.user-menu-panel button:hover {
+  background: rgba(29, 26, 23, 0.06);
+  color: var(--primary-dark);
+}
+
+.user-menu-panel form {
+  margin: 0;
+}
+
 .avatar-circle.large {
   width: 88px;
   height: 88px;
@@ -2207,6 +2265,11 @@ p {
   .main-nav {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .user-menu-panel {
+    left: 0;
+    right: auto;
   }
 
   .auth-shell,

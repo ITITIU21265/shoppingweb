@@ -24,24 +24,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdAndUser(Long id, User user);
 
     @Query("""
-            select o
-            from Order o
-            where o.seller.username = :username
-            order by o.createdAt desc
+            select distinct oi.order
+            from OrderItem oi
+            where oi.product.seller.username = :username
+            order by oi.order.createdAt desc
             """)
     List<Order> findRecentBySellerUsername(@Param("username") String username, Pageable pageable);
 
     @Query("""
-            select count(o.id)
-            from Order o
-            where o.seller.username = :username
+            select count(distinct oi.order.id)
+            from OrderItem oi
+            where oi.product.seller.username = :username
             """)
     long countDistinctBySellerUsername(@Param("username") String username);
 
     @Query("""
-            select count(distinct o.user.id)
-            from Order o
-            where o.seller.username = :username
+            select count(distinct oi.order.user.id)
+            from OrderItem oi
+            where oi.product.seller.username = :username
             """)
     long countDistinctCustomersBySellerUsername(@Param("username") String username);
 

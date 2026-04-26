@@ -24,25 +24,25 @@
 
       <nav class="main-nav">
         <a href="/catalog">Catalog</a>
-        <a href="/orders">Orders</a>
-        <a href="/profile">Profile</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
-        <a class="header-shortcut is-active" href="/saved">
-          <span>Saved</span>
-          <strong th:text="${savedItemCount}">0</strong>
-        </a>
         <a class="header-shortcut" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
         </a>
-        <span class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</span>
-        <form method="post" action="/auth/logout">
-          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-          <button class="btn btn-ghost" type="submit">Sign Out</button>
-        </form>
+        <details class="user-menu">
+          <summary class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</summary>
+          <div class="user-menu-panel">
+            <a href="/profile">My Account</a>
+            <a href="/orders">Orders</a>
+            <form method="post" action="/auth/logout">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+              <button type="submit">Sign Out</button>
+            </form>
+          </div>
+        </details>
       </div>
     </header>
 

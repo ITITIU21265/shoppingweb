@@ -36,22 +36,17 @@ public class UserController {
             Set.of("overview", "orders", "products", "customers", "marketing", "audit", "users", "settings");
     private static final Set<String> SELLER_DASHBOARD_VIEWS =
             Set.of("overview", "orders", "products", "marketing", "settings");
-    private static final Set<String> CUSTOMER_DASHBOARD_VIEWS =
-            Set.of("overview", "orders", "saved", "settings");
 
     private final UserService userService;
     private final AdminDashboardModelBuilder adminDashboardModelBuilder;
     private final SellerDashboardModelBuilder sellerDashboardModelBuilder;
-    private final CustomerDashboardModelBuilder customerDashboardModelBuilder;
 
     public UserController(UserService userService,
                           AdminDashboardModelBuilder adminDashboardModelBuilder,
-                          SellerDashboardModelBuilder sellerDashboardModelBuilder,
-                          CustomerDashboardModelBuilder customerDashboardModelBuilder) {
+                          SellerDashboardModelBuilder sellerDashboardModelBuilder) {
         this.userService = userService;
         this.adminDashboardModelBuilder = adminDashboardModelBuilder;
         this.sellerDashboardModelBuilder = sellerDashboardModelBuilder;
-        this.customerDashboardModelBuilder = customerDashboardModelBuilder;
     }
 
     @GetMapping("/profile")
@@ -66,7 +61,7 @@ public class UserController {
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('ADMIN','SELLER','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public String dashboard(@RequestParam(defaultValue = "overview") String view,
                             @RequestParam(defaultValue = "all") String segment,
                             @RequestParam(required = false) Long customerId,
@@ -79,6 +74,9 @@ public class UserController {
                             Model model) {
         String username = SecurityUtils.requireCurrentUsername(authentication);
         UserResponseDTO user = userService.getCurrentUser(username);
+        if (!hasDashboardAccess(user)) {
+            return "redirect:/catalog";
+        }
         String activeView = resolveDashboardView(user, view);
 
         populateAccountForms(model, user);
@@ -86,7 +84,6 @@ public class UserController {
         model.addAttribute("activeDashboardView", activeView);
         model.addAttribute("isAdminDashboard", "ADMIN".equalsIgnoreCase(user.getRole()));
         model.addAttribute("isSellerDashboard", "SELLER".equalsIgnoreCase(user.getRole()));
-        model.addAttribute("isCustomerDashboard", "CUSTOMER".equalsIgnoreCase(user.getRole()));
         populateRoleDashboard(
                 model,
                 user,
@@ -217,9 +214,6 @@ public class UserController {
             return;
         }
 
-        if ("CUSTOMER".equalsIgnoreCase(user.getRole())) {
-            customerDashboardModelBuilder.populate(model, user.getUsername());
-        }
     }
 
     private void populateAccountForms(Model model, UserResponseDTO user) {
@@ -246,8 +240,7 @@ public class UserController {
     private boolean hasDashboardAccess(UserResponseDTO user) {
         return user != null
                 && ("ADMIN".equalsIgnoreCase(user.getRole())
-                || "SELLER".equalsIgnoreCase(user.getRole())
-                || "CUSTOMER".equalsIgnoreCase(user.getRole()));
+                || "SELLER".equalsIgnoreCase(user.getRole()));
     }
 
     private String resolveDashboardView(UserResponseDTO user, String requestedView) {
@@ -258,10 +251,8 @@ public class UserController {
         Set<String> allowedViews;
         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
             allowedViews = ADMIN_DASHBOARD_VIEWS;
-        } else if ("SELLER".equalsIgnoreCase(user.getRole())) {
-            allowedViews = SELLER_DASHBOARD_VIEWS;
         } else {
-            allowedViews = CUSTOMER_DASHBOARD_VIEWS;
+            allowedViews = SELLER_DASHBOARD_VIEWS;
         }
 
         if (requestedView == null || requestedView.isBlank()) {
