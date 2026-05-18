@@ -20,6 +20,7 @@ import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.entity.product.ProductCategory;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.ProductService;
+import com.web.shoppingweb.service.ProductRecommendationService;
 
 import jakarta.validation.Valid;
 
@@ -30,25 +31,31 @@ public class ProductController {
     private static final int CATALOG_PAGE_SIZE = 18;
 
     private final ProductService productService;
+    private final ProductRecommendationService recommendationService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, ProductRecommendationService recommendationService) {
         this.productService = productService;
+        this.recommendationService = recommendationService;
     }
 
     @GetMapping("/catalog")
     public String catalog(@RequestParam(required = false) String category,
+                          @RequestParam(name = "q", required = false) String keyword,
                           @RequestParam(defaultValue = "1") int page,
                           Model model) {
         ProductCategory selectedCategory = ProductCategory.fromValue(category);
+        String normalizedKeyword = keyword == null ? null : keyword.trim();
         int requestedPage = Math.max(page, 1);
         Page<Product> catalogPage = productService.getCatalogPage(
                 selectedCategory,
+                normalizedKeyword,
                 PageRequest.of(requestedPage - 1, CATALOG_PAGE_SIZE)
         );
 
         if (catalogPage.getTotalPages() > 0 && requestedPage > catalogPage.getTotalPages()) {
             catalogPage = productService.getCatalogPage(
                     selectedCategory,
+                    normalizedKeyword,
                     PageRequest.of(catalogPage.getTotalPages() - 1, CATALOG_PAGE_SIZE)
             );
         }
@@ -70,6 +77,7 @@ public class ProductController {
         }
 
         model.addAttribute("selectedCategory", selectedCategory);
+        model.addAttribute("keyword", normalizedKeyword);
         model.addAttribute("categories", productService.getAvailableCategories());
         model.addAttribute("products", catalogPage.getContent());
         model.addAttribute("currentPage", currentPage);
@@ -91,7 +99,9 @@ public class ProductController {
 
     @GetMapping("/products/{slug}")
     public String productDetail(@PathVariable String slug, Model model) {
-        model.addAttribute("product", productService.getProductDetail(slug));
+        Product product = productService.getProductDetail(slug);
+        model.addAttribute("product", product);
+        model.addAttribute("relatedProducts", recommendationService.getRelatedProducts(product.getId(), 4));
         return "product-detail";
     }
 

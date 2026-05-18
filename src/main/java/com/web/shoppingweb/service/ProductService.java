@@ -13,7 +13,7 @@ public interface ProductService {
 
     List<Product> getCatalog(ProductCategory category);
 
-    Page<Product> getCatalogPage(ProductCategory category, Pageable pageable);
+    Page<Product> getCatalogPage(ProductCategory category, String keyword, Pageable pageable);
 
     List<ProductCategory> getAvailableCategories();
 

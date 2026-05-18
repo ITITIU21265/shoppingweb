@@ -55,11 +55,27 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Product> getCatalogPage(ProductCategory category, Pageable pageable) {
-        if (category == null) {
+    public Page<Product> getCatalogPage(ProductCategory category, String keyword, Pageable pageable) {
+        String normalizedKeyword = keyword == null ? null : keyword.trim();
+        boolean hasKeyword = normalizedKeyword != null && !normalizedKeyword.isEmpty();
+
+        if (category == null && !hasKeyword) {
             return productRepository.findByActiveTrueOrderByFeaturedDescCreatedAtDesc(pageable);
         }
-        return productRepository.findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(category, pageable);
+        if (category == null) {
+            return productRepository.findByActiveTrueAndNameContainingIgnoreCaseOrderByFeaturedDescCreatedAtDesc(
+                    normalizedKeyword,
+                    pageable
+            );
+        }
+        if (!hasKeyword) {
+            return productRepository.findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(category, pageable);
+        }
+        return productRepository.findByActiveTrueAndCategoryAndNameContainingIgnoreCaseOrderByFeaturedDescCreatedAtDesc(
+                category,
+                normalizedKeyword,
+                pageable
+        );
     }
 
     @Override

@@ -22,6 +22,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByActiveTrueAndCategoryOrderByFeaturedDescCreatedAtDesc(ProductCategory category, Pageable pageable);
 
+    Page<Product> findByActiveTrueAndNameContainingIgnoreCaseOrderByFeaturedDescCreatedAtDesc(String keyword, Pageable pageable);
+
+    Page<Product> findByActiveTrueAndCategoryAndNameContainingIgnoreCaseOrderByFeaturedDescCreatedAtDesc(ProductCategory category,
+                                                                                                         String keyword,
+                                                                                                         Pageable pageable);
+
     List<Product> findBySeller_UsernameOrderByCreatedAtDesc(String username);
 
     List<Product> findTop5BySeller_UsernameOrderByCreatedAtDesc(String username);

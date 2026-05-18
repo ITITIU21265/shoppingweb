@@ -870,9 +870,16 @@ p {
   font-size: 0.92rem;
   font-weight: 700;
 }
-
+.catalog-pagination-input-search{
+  width: 280px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text);
+  padding: 10px 14px;
+}
 .catalog-pagination-input {
-  width: 88px;
+  width: 80px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.88);

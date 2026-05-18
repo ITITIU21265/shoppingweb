@@ -11,6 +11,14 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: {
+          preflight: false
+        }
+      };
+    </script>
   </head>
   <body class="app-body">
     <header class="app-header">
@@ -78,6 +86,34 @@
           </div>
         </div>
       </section>
+
+      <div th:if="${relatedProducts != null and !relatedProducts.isEmpty()}">
+        <section class="mt-16 border-t border-gray-200 pt-10">
+          <div class="mb-6 flex items-center justify-between gap-4">
+            <h2 class="text-2xl font-bold text-gray-900">You Might Also Like</h2>
+            <p class="text-sm italic text-gray-500">✨ Recommended by StyleHub AI</p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            <article class="group" th:each="related : ${relatedProducts}">
+              <a th:href="@{'/products/' + ${related.slug}}" class="block overflow-hidden rounded-lg bg-gray-100">
+                <img
+                  th:src="${related.imageUrl != null ? related.imageUrl : '/images/placeholder.jpg'}"
+                  th:alt="${related.name}"
+                  class="aspect-square w-full object-cover transition-opacity duration-200 group-hover:opacity-75"
+                />
+              </a>
+              <div class="mt-4 flex justify-between gap-4">
+                <div>
+                  <h3 class="text-sm text-gray-700" th:text="${related.name}">Product Name</h3>
+                  <p class="mt-1 text-sm text-gray-500" th:text="${related.category}">Category</p>
+                </div>
+                <p class="text-sm font-medium text-gray-900" th:text="${related.price} + ' ' + ${related.currency}">$0.00</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
     </main>
   </body>
 </html>
