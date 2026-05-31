@@ -11,6 +11,9 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/style.css" />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <script src="/js/interactions.js" defer></script>
   </head>
   <body class="app-body">
     <header class="app-header">
@@ -156,17 +159,17 @@
             <a th:href="@{/products/{slug}(slug=${product.slug})}">
               <img th:src="${product.imageUrl}" th:alt="${product.name}" />
             </a>
-            <form th:if="${signedIn}" class="product-save-form" method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
-              <input type="hidden" name="redirectTo" value="/catalog" />
-              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-              <button
-                class="product-save-chip"
-                th:classappend="${savedProductIds.contains(product.id)} ? ' is-saved'"
-                type="submit"
-                th:text="${savedProductIds.contains(product.id)} ? 'Saved' : 'Save'">
-                Save
-              </button>
-            </form>
+            <button th:if="${signedIn}"
+                    class="product-save-chip"
+                    th:classappend="${savedProductIds.contains(product.id)} ? ' is-saved'"
+                    type="button"
+                    data-action="save"
+                    th:data-product-id="${product.id}"
+                    data-save-text="Save"
+                    data-saved-text="Saved"
+                    th:text="${savedProductIds.contains(product.id)} ? 'Saved' : 'Save'">
+              Save
+            </button>
             <a th:if="${!signedIn}" class="product-save-chip" href="/auth/login">Save</a>
           </div>
           <div class="product-content">
@@ -179,11 +182,13 @@
             <div class="product-footer product-actions-row">
               <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
               <div class="product-action-buttons">
-                <form th:if="${signedIn}" method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
-                  <input type="hidden" name="redirectTo" value="/catalog" />
-                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                  <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
-                </form>
+                <button th:if="${signedIn}"
+                        class="btn btn-primary btn-product-action"
+                        type="button"
+                        data-action="add-to-cart"
+                        th:data-product-id="${product.id}">
+                  Add to Cart
+                </button>
                 <a th:if="${!signedIn}" class="btn btn-primary btn-product-action" href="/auth/login">Add to Cart</a>
                 <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
               </div>

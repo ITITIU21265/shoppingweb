@@ -1,19 +1,38 @@
 # Auth Design
 
-This document reflects the current scope of this repository. The project currently exposes only these backend areas:
+Tài liệu này mô tả thiết kế xác thực và phân quyền hiện tại của project `shoppingweb`.
 
-- `auth`
-- `users`
-- `admin users`
-- static login page
+Project đang có hai bề mặt truy cập song song:
 
-There are no active `product`, `cart`, `order`, or `chatbot` modules in the current codebase, so they are intentionally excluded from the access matrix below.
+- Web MVC dùng Spring Security session và form login.
+- REST API dùng JWT access token và refresh token.
 
-## Access Matrix
+Hai bề mặt này dùng chung `UserService`, `CustomUserDetailsService`, `PasswordEncoder`, role và trạng thái user trong database.
+
+## 1. Security Model
+
+Security được tách thành hai `SecurityFilterChain` trong `SecurityConfig`.
+
+### API chain: `/api/**`
+
+- Stateless.
+- Tắt CSRF.
+- Đọc JWT từ header `Authorization: Bearer <token>`.
+- Dùng `JwtAuthenticationFilter` để validate token và set `Authentication`.
+- Lỗi auth/access trả JSON qua `JwtAuthenticationEntryPoint` và `RestAccessDeniedHandler`.
+
+### Web chain
+
+- Stateful session.
+- Dùng form login ở `/auth/login`.
+- Login thành công redirect theo role bằng `SecurityUtils.resolvePostLoginTarget(...)`.
+- `UserStatusEnforcementFilter` kiểm tra session user còn `ACTIVE` hay không.
+- Lỗi access của web redirect về `/catalog?denied=true`.
+
+## 2. API Access Matrix
 
 | Endpoint | Method | Access |
 | --- | --- | --- |
-| `/api/auth/login` | `GET` | Public |
 | `/api/auth/login` | `POST` | Public |
 | `/api/auth/register` | `POST` | Public |
 | `/api/auth/forgot-password` | `POST` | Public |
@@ -21,63 +40,92 @@ There are no active `product`, `cart`, `order`, or `chatbot` modules in the curr
 | `/api/auth/refresh` | `POST` | Public |
 | `/api/auth/me` | `GET` | Authenticated |
 | `/api/auth/logout` | `POST` | Authenticated |
-| `/api/auth/change-password` | `PUT` | Authenticated |
 | `/api/users/profile` | `GET` | Authenticated |
 | `/api/users/profile` | `PUT` | Authenticated |
+| `/api/users/change-password` | `PUT` | Authenticated |
 | `/api/users/account` | `DELETE` | Authenticated |
+| `/api/products` | `GET` | Public |
+| `/api/products/{slug}` | `GET` | Public |
+| `/api/products` | `POST` | `ADMIN` or `SELLER` |
+| `/api/products/{id}` | `PUT` | `ADMIN` or `SELLER` |
+| `/api/products/{id}` | `DELETE` | `ADMIN` or `SELLER` |
+| `/api/saved` | `GET` | Authenticated |
+| `/api/saved` | `POST` | Authenticated |
+| `/api/saved` | `DELETE` | Authenticated |
+| `/api/cart` | `GET` | Authenticated |
+| `/api/cart/items` | `POST` | Authenticated |
+| `/api/cart/items/{variantId}` | `PUT` | Authenticated |
+| `/api/cart/items/{variantId}` | `DELETE` | Authenticated |
+| `/api/orders` | `GET` | Authenticated |
+| `/api/orders/{orderId}` | `GET` | Authenticated |
+| `/api/orders` | `POST` | Authenticated |
 | `/api/admin/users` | `GET` | `ADMIN` |
 | `/api/admin/users/{id}/role` | `PUT` | `ADMIN` |
 | `/api/admin/users/{id}/status` | `PATCH` | `ADMIN` |
 
-Static assets are public:
+## 3. Web Access Matrix
 
-- `/css/**`
-- `/js/**`
-- `/images/**`
-- `/fonts/**`
-
-## Token Policy
-
-- Login returns `accessToken` and `refreshToken`.
-- Only one refresh token is kept per user in the current project scope.
-- Refresh rotates the refresh token:
-  old token is deleted, new access token and new refresh token are issued.
-- Logout revokes the supplied refresh token.
-- Changing password revokes all refresh tokens of the user.
-- Resetting password revokes all refresh tokens of the user.
-- Blocking or deleting a user revokes all refresh tokens of the user.
-- Only users with status `ACTIVE` can authenticate or refresh.
-
-## Frontend Session State
-
-- The current login page now stores:
-  `accessToken`, `refreshToken`, and a lightweight `currentUser` object in `localStorage`.
-- The login page is wired for:
-  login, register, and forgot-password request.
-- The repository does not yet contain a protected frontend area that automatically retries requests with `/api/auth/refresh`.
-- Because of that, the backend refresh flow is now correct, but a shared frontend request interceptor is still the next step once protected pages are added.
-
-## Current User Rules
-
-- Endpoints that depend on the current user now require authentication at the security layer.
-- Controllers resolve the current username through `SecurityUtils.requireCurrentUsername(...)`.
-- JWT authentication will not populate the security context for disabled, blocked, or deleted users.
-
-## Error Contract
-
-The backend now distinguishes the main error groups as follows:
-
-| Type | Status |
+| Route | Access |
 | --- | --- |
-| Validation error | `400` |
-| Business rule / invalid request data | `400` |
-| Authentication failure | `401` |
-| Access denied | `403` |
-| Resource not found | `404` |
-| Duplicate data | `409` |
-| Unexpected server error | `500` |
+| `/` | Public, redirects to `/catalog` |
+| `/catalog` | Public |
+| `/products/{slug}` | Public |
+| `/auth/**` | Public |
+| `/css/**`, `/js/**`, `/images/**`, `/fonts/**` | Public |
+| `/profile` | Authenticated |
+| `/account/**` | Authenticated |
+| `/supplier/**` | Authenticated |
+| `/saved/**` | Authenticated |
+| `/cart/**` | Authenticated |
+| `/checkout/**` | Authenticated |
+| `/orders/**` | Authenticated |
+| `/dashboard/**` | `ADMIN` or `SELLER` |
+| `POST /products` | `ADMIN` or `SELLER` |
+| `/admin/**` | `ADMIN` |
 
-Error response shape remains:
+Lưu ý: dashboard template có phần customer view, nhưng security hiện tại chỉ cho `ADMIN` và `SELLER` vào `/dashboard`. Customer vẫn dùng các route như `/profile`, `/cart`, `/orders`, `/saved`.
+
+## 4. Token Policy
+
+- API login trả `accessToken` và `refreshToken`.
+- Refresh token được lưu trong bảng `refresh_tokens`.
+- Login xóa refresh token cũ của cùng user rồi tạo token mới.
+- Refresh token rotation xóa token cũ và phát access token + refresh token mới.
+- Logout xóa refresh token được gửi lên.
+- Đổi mật khẩu, reset mật khẩu, block user, delete account đều revoke refresh token liên quan.
+- JWT chỉ được chấp nhận nếu user vẫn tồn tại và còn trạng thái `ACTIVE`.
+
+## 5. Current User Rules
+
+- API lấy current user từ JWT đã được set vào `SecurityContext`.
+- Web lấy current user từ Spring Security session.
+- Controller dùng `SecurityUtils.requireCurrentUsername(...)` khi endpoint cần user hiện tại.
+- `CustomUserDetailsService` chỉ load user hợp lệ cho Spring Security.
+- `UserStatusEnforcementFilter` xử lý trường hợp user web session bị block/delete sau khi đã login.
+
+## 6. Password Reset
+
+Flow reset password dùng OTP qua email:
+
+```text
+POST /api/auth/forgot-password hoặc POST /auth/forgot-password
+-> UserService.forgotPassword()
+-> xóa token cũ của user
+-> tạo OTP 6 số
+-> lưu PasswordResetToken
+-> gửi mail qua JavaMailSender
+
+POST /api/auth/reset-password hoặc POST /auth/reset-password
+-> UserService.resetPassword()
+-> kiểm tra OTP tồn tại, chưa dùng, chưa hết hạn
+-> đổi password
+-> đánh dấu token đã dùng
+-> revoke refresh token của user
+```
+
+## 7. Error Contract Cho API
+
+API trả lỗi theo shape chuẩn:
 
 ```json
 {
@@ -89,11 +137,46 @@ Error response shape remains:
 }
 ```
 
-## Database Notes
+Các nhóm lỗi chính:
 
-- `users`, `roles`, `user_roles`, and `refresh_tokens` are managed by JPA entities.
-- `password_resets` is now also managed by JPA through `PasswordResetToken`.
-- Mandatory roles are seeded on startup:
-  `ADMIN`, `CUSTOMER`, `SELLER`
+| Type | Status |
+| --- | --- |
+| Validation error | `400` |
+| Business rule / invalid request data | `400` |
+| Authentication failure | `401` |
+| Access denied | `403` |
+| Resource not found | `404` |
+| Duplicate data | `409` |
+| Unexpected server error | `500` |
 
-This project still uses `spring.jpa.hibernate.ddl-auto=update`, so it is more stable than before but not yet a full versioned migration setup. A future step should replace this with Flyway or Liquibase once the schema is finalized.
+## 8. Database Notes
+
+Các bảng auth/user chính được map bằng JPA entity:
+
+- `users`
+- `roles`
+- `user_roles`
+- `refresh_tokens`
+- `password_resets`
+
+Role bắt buộc của hệ thống:
+
+- `ADMIN`
+- `CUSTOMER`
+- `SELLER`
+
+`SystemDataInitializer` có thể seed role, demo admin, demo seller, category và product mẫu, nhưng chỉ chạy khi bật:
+
+```properties
+app.seed.system-data=true
+```
+
+Hiện `application.properties` đang đặt `spring.jpa.hibernate.ddl-auto=none`, nên database schema phải tồn tại trước khi app chạy.
+
+## 9. Production Notes
+
+- Không dùng JWT secret mặc định cho production.
+- Không commit DB password hoặc mail password thật.
+- Nên thêm migration bằng Flyway hoặc Liquibase.
+- Nên thêm rate limit cho login, forgot password và reset password nếu public API được mở rộng.
+- Nên bổ sung test cho login, refresh token rotation, logout, password reset, admin block user và các endpoint cần role.

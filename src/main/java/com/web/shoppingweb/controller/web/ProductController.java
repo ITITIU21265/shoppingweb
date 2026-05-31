@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 @RequestMapping
 public class ProductController {
 
-    private static final int CATALOG_PAGE_SIZE = 18;
+    private static final int CATALOG_PAGE_SIZE = 24;
 
     private final ProductService productService;
     private final ProductRecommendationService recommendationService;
