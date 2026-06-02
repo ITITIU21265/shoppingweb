@@ -27,6 +27,8 @@ import com.web.shoppingweb.entity.cart.CartItemId;
 import com.web.shoppingweb.entity.cart.CartStatus;
 import com.web.shoppingweb.entity.order.Order;
 import com.web.shoppingweb.entity.order.OrderItem;
+import com.web.shoppingweb.entity.order.OrderSeller;
+import com.web.shoppingweb.entity.order.OrderSellerStatus;
 import com.web.shoppingweb.entity.order.OrderStatus;
 import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.entity.product.ProductVariant;
@@ -37,6 +39,7 @@ import com.web.shoppingweb.repository.cart.CartItemRepository;
 import com.web.shoppingweb.repository.cart.CartRepository;
 import com.web.shoppingweb.repository.order.OrderItemRepository;
 import com.web.shoppingweb.repository.order.OrderRepository;
+import com.web.shoppingweb.repository.order.OrderSellerRepository;
 import com.web.shoppingweb.repository.product.ProductVariantRepository;
 import com.web.shoppingweb.repository.user.UserRepository;
 import com.web.shoppingweb.service.OrderService;
@@ -50,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderSellerRepository orderSellerRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductVariantRepository productVariantRepository;
@@ -57,12 +61,14 @@ public class OrderServiceImpl implements OrderService {
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             OrderItemRepository orderItemRepository,
+                            OrderSellerRepository orderSellerRepository,
                             CartRepository cartRepository,
                             CartItemRepository cartItemRepository,
                             ProductVariantRepository productVariantRepository,
                             UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.orderSellerRepository = orderSellerRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.productVariantRepository = productVariantRepository;
@@ -70,7 +76,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDetailDTO checkout(String username, CheckoutRequestDTO request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Checkout request is required.");
+        }
+
         User user = getUser(username);
         Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalArgumentException("Your cart is empty."));
@@ -85,6 +96,8 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, ProductVariant> lockedVariants = lockSelectedVariants(selectedIds);
         String shippingAddress = normalizeAddress(request.getShippingAddress());
         Map<Long, CheckoutGroup> groupsBySeller = new LinkedHashMap<>();
+        long subtotalAmount = 0L;
+        int totalQuantity = 0;
 
         for (CartItem cartItem : selectedCartItems) {
             ProductVariant variant = lockedVariants.get(cartItem.getVariant().getId());
@@ -92,27 +105,58 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalArgumentException("Some selected items are no longer available.");
             }
             Product product = variant.getProduct();
-            validateCheckoutItem(product, variant, cartItem.getQuantity());
+            int quantity = cartItem.getQuantity();
+            validateCheckoutItem(product, variant, quantity);
+
+            long unitPriceAmount = defaultAmount(variant.getPriceAmount());
+            long lineTotalAmount = Math.multiplyExact(unitPriceAmount, quantity);
+            subtotalAmount = Math.addExact(subtotalAmount, lineTotalAmount);
+            totalQuantity = Math.addExact(totalQuantity, quantity);
 
             groupsBySeller.computeIfAbsent(
                     product.getSeller().getId(),
                     sellerId -> new CheckoutGroup(product.getSeller())
-            ).add(cartItem, variant);
+            ).add(cartItem, variant, unitPriceAmount, lineTotalAmount);
 
-            int remainingStock = variant.getStockQty() - cartItem.getQuantity();
+            int remainingStock = variant.getStockQty() - quantity;
             variant.setStockQty(remainingStock);
         }
 
-        List<OrderDetailDTO> createdOrders = new ArrayList<>();
+        Order order = new Order();
+        order.setUser(user);
+        order.setCart(cart);
+        order.setOrderNumber(generateOrderNumber());
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setCustomerName(user.getFullName());
+        order.setCustomerEmail(user.getEmail());
+        order.setShippingAddress(shippingAddress);
+        order.setTotalQuantity(totalQuantity);
+        order.setSubtotalAmount(subtotalAmount);
+        Order savedOrder = orderRepository.save(order);
+
+        List<OrderItem> orderItems = new ArrayList<>();
         for (CheckoutGroup group : groupsBySeller.values()) {
-            createdOrders.add(createSellerOrder(user, cart, group, shippingAddress));
+            OrderSeller orderSeller = new OrderSeller();
+            orderSeller.setOrder(savedOrder);
+            orderSeller.setSeller(group.seller());
+            orderSeller.setStatus(OrderSellerStatus.PENDING);
+            orderSeller.setSubtotalAmount(group.subtotalAmount());
+            orderSeller.setShippingAmount(0L);
+            orderSeller.setDiscountAmount(0L);
+            orderSeller.setTotalAmount(group.subtotalAmount());
+            OrderSeller savedOrderSeller = orderSellerRepository.save(orderSeller);
+
+            for (CheckoutLine line : group.lines()) {
+                orderItems.add(createOrderItem(savedOrder, savedOrderSeller, line));
+            }
         }
+        List<OrderItem> savedOrderItems = orderItemRepository.saveAll(orderItems);
 
         moveRemainingItemsToFreshCart(user, cart, cartItems, remainingCartItems);
         cart.setStatus(CartStatus.ORDERED);
         cartRepository.save(cart);
 
-        return createdOrders.get(0);
+        return toDetail(savedOrder, savedOrderItems);
     }
 
     @Override
@@ -166,53 +210,26 @@ public class OrderServiceImpl implements OrderService {
         return lockedVariants;
     }
 
-    private OrderDetailDTO createSellerOrder(User customer,
-                                             Cart cart,
-                                             CheckoutGroup group,
-                                             String shippingAddress) {
-        long subtotalAmount = 0L;
-        int totalQuantity = 0;
-        List<OrderItem> orderItems = new ArrayList<>();
+    private OrderItem createOrderItem(Order order, OrderSeller orderSeller, CheckoutLine line) {
+        ProductVariant variant = line.variant();
+        Product product = variant.getProduct();
 
-        Order order = new Order();
-        order.setUser(customer);
-        order.setCart(cart);
-        order.setOrderNumber(generateOrderNumber());
-        order.setStatus(OrderStatus.CONFIRMED);
-        order.setCustomerName(customer.getFullName());
-        order.setCustomerEmail(customer.getEmail());
-        order.setShippingAddress(shippingAddress);
-
-        for (CheckoutLine line : group.lines()) {
-            ProductVariant variant = line.variant();
-            Product product = variant.getProduct();
-            int quantity = line.cartItem().getQuantity();
-
-            long unitPriceAmount = defaultAmount(variant.getPriceAmount());
-            long lineTotalAmount = Math.multiplyExact(unitPriceAmount, quantity);
-            subtotalAmount = Math.addExact(subtotalAmount, lineTotalAmount);
-            totalQuantity = Math.addExact(totalQuantity, quantity);
-
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(product);
-            orderItem.setVariant(variant);
-            orderItem.setProductName(product.getName());
-            orderItem.setProductSlug(product.getSlug());
-            orderItem.setProductImageUrl(product.getImageUrl());
-            orderItem.setSku(variant.getSku());
-            orderItem.setQuantity(quantity);
-            orderItem.setUnitPriceAmount(unitPriceAmount);
-            orderItem.setLineTotalAmount(lineTotalAmount);
-            orderItems.add(orderItem);
-        }
-
-        order.setTotalQuantity(totalQuantity);
-        order.setSubtotalAmount(subtotalAmount);
-        Order savedOrder = orderRepository.save(order);
-        orderItemRepository.saveAll(orderItems);
-
-        return toDetail(savedOrder, orderItems);
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrder(order);
+        orderItem.setOrderSeller(orderSeller);
+        orderItem.setProduct(product);
+        orderItem.setVariant(variant);
+        orderItem.setProductTitle(product.getTitle() == null || product.getTitle().isBlank()
+                ? product.getName()
+                : product.getTitle());
+        orderItem.setProductName(product.getName());
+        orderItem.setProductSlug(product.getSlug());
+        orderItem.setProductImageUrl(product.getImageUrl());
+        orderItem.setSku(variant.getSku());
+        orderItem.setQuantity(line.cartItem().getQuantity());
+        orderItem.setUnitPriceAmount(line.unitPriceAmount());
+        orderItem.setLineTotalAmount(line.lineTotalAmount());
+        return orderItem;
     }
 
     private List<CartItem> resolveSelectedCartItems(List<CartItem> cartItems, Set<Long> selectedIds) {
@@ -367,7 +384,10 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    private record CheckoutLine(CartItem cartItem, ProductVariant variant) {
+    private record CheckoutLine(CartItem cartItem,
+                                ProductVariant variant,
+                                long unitPriceAmount,
+                                long lineTotalAmount) {
     }
 
     private static final class CheckoutGroup {
@@ -383,14 +403,23 @@ public class OrderServiceImpl implements OrderService {
             return seller;
         }
 
+        private long subtotalAmount() {
+            return lines.stream()
+                    .mapToLong(CheckoutLine::lineTotalAmount)
+                    .sum();
+        }
+
         private List<CheckoutLine> lines() {
             return lines.stream()
                     .sorted(Comparator.comparing(line -> line.variant().getId()))
                     .toList();
         }
 
-        private void add(CartItem cartItem, ProductVariant variant) {
-            lines.add(new CheckoutLine(cartItem, variant));
+        private void add(CartItem cartItem,
+                         ProductVariant variant,
+                         long unitPriceAmount,
+                         long lineTotalAmount) {
+            lines.add(new CheckoutLine(cartItem, variant, unitPriceAmount, lineTotalAmount));
         }
     }
 }

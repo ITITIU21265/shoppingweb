@@ -28,6 +28,7 @@ body {
 
 body {
   font-family: "Manrope", sans-serif;
+  line-height: 1.6;
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(199, 106, 67, 0.16), transparent 28%),
@@ -49,6 +50,13 @@ select {
 h1,
 h2,
 h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  line-height: 1.3;
+}
+
 p {
   margin: 0;
 }
@@ -107,10 +115,11 @@ p {
 .auth-brand h1,
 .hero-card h1,
 .form-page-card h1 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 5vw, 4.4rem);
-  line-height: 0.94;
-  letter-spacing: -0.03em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
 }
 
 .lead,
@@ -153,6 +162,7 @@ p {
 .settings-stack h2,
 .profile-card h2 {
   font-size: 1.3rem;
+  line-height: 1.3;
   margin-bottom: 8px;
 }
 
@@ -229,6 +239,8 @@ p {
 .form-page-card h1,
 .panel-card h2 {
   font-size: 2rem;
+  line-height: 1.25;
+  margin-bottom: 12px;
 }
 
 .field {
@@ -422,10 +434,10 @@ p {
 }
 
 .brand-name {
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Playfair Display', serif;
   font-size: 2rem;
   font-weight: 700;
-  line-height: 0.95;
+  line-height: 1.2;
 }
 
 .brand-subtitle {
@@ -597,9 +609,10 @@ p {
 }
 
 .supplier-registration-copy h1 {
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Playfair Display', serif;
   font-size: clamp(2.4rem, 5vw, 3.6rem);
-  line-height: 0.98;
+  line-height: 1.25;
+  margin-bottom: 16px;
 }
 
 .supplier-registration-copy p,
@@ -628,6 +641,8 @@ p {
 
 .supplier-review-state h2 {
   font-size: 1.25rem;
+  line-height: 1.3;
+  margin-bottom: 8px;
 }
 
 .hero-card {
@@ -799,6 +814,7 @@ p {
 .product-title {
   font-size: 1.1rem;
   font-weight: 700;
+  line-height: 1.3;
 }
 
 .product-footer {
@@ -991,6 +1007,8 @@ p {
 
 .cart-item-content h2 {
   font-size: 1.2rem;
+  line-height: 1.3;
+  margin-bottom: 8px;
 }
 
 .cart-item-selector {
@@ -1133,6 +1151,8 @@ p {
 
 .detail-copy h3 {
   font-size: 1rem;
+  line-height: 1.4;
+  margin-bottom: 6px;
 }
 
 .detail-copy p {
@@ -1205,6 +1225,8 @@ p {
 .checkout-item-copy h3,
 .order-line-copy h3 {
   font-size: 1.05rem;
+  line-height: 1.4;
+  margin-bottom: 6px;
 }
 
 .checkout-form {
@@ -1261,6 +1283,7 @@ p {
 
 .order-card h2 {
   font-size: 1.25rem;
+  line-height: 1.3;
   word-break: break-word;
 }
 
@@ -1320,6 +1343,8 @@ p {
 
 .profile-summary h1 {
   font-size: 1.3rem;
+  line-height: 1.3;
+  margin-bottom: 8px;
 }
 
 .profile-summary p {
@@ -1452,6 +1477,7 @@ p {
 
 .dashboard-list-item h3 {
   font-size: 1rem;
+  line-height: 1.3;
   margin-bottom: 6px;
 }
 
@@ -1529,6 +1555,8 @@ p {
 .dashboard-console-brand h1 {
   color: #fff;
   font-size: 1.5rem;
+  line-height: 1.3;
+  margin-bottom: 8px;
 }
 
 .dashboard-console-brand .eyebrow,
@@ -1665,6 +1693,7 @@ p {
 }
 
 .dashboard-console-hero h2 {
+  line-height: 1.3;
   margin-bottom: 8px;
 }
 
@@ -1731,6 +1760,7 @@ p {
 
 .dashboard-console-list-item h3 {
   font-size: 1rem;
+  line-height: 1.3;
   margin-bottom: 6px;
 }
 
@@ -2071,6 +2101,8 @@ p {
 
 .dashboard-detail-card h3 {
   font-size: 1.05rem;
+  line-height: 1.3;
+  margin-bottom: 6px;
 }
 
 .dashboard-detail-card p {
@@ -2137,7 +2169,12 @@ p {
   min-width: 0;
 }
 
-.dashboard-product-copy h3,
+.dashboard-product-copy h3 {
+  line-height: 1.3;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+
 .dashboard-product-copy p {
   overflow-wrap: anywhere;
 }
@@ -2268,6 +2305,7 @@ p {
 
 .action-tile h3 {
   font-size: 1.15rem;
+  line-height: 1.3;
   margin-bottom: 8px;
 }
 

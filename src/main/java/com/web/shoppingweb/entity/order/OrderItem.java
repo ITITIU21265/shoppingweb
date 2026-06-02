@@ -25,6 +25,10 @@ public class OrderItem {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_seller_id", nullable = false)
+    private OrderSeller orderSeller;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
@@ -32,6 +36,9 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id")
     private ProductVariant variant;
+
+    @Column(name = "product_title", nullable = false, length = 255)
+    private String productTitle;
 
     @Column(name = "product_name", nullable = false, length = 140)
     private String productName;
@@ -70,6 +77,14 @@ public class OrderItem {
         this.order = order;
     }
 
+    public OrderSeller getOrderSeller() {
+        return orderSeller;
+    }
+
+    public void setOrderSeller(OrderSeller orderSeller) {
+        this.orderSeller = orderSeller;
+    }
+
     public Product getProduct() {
         return product;
     }
@@ -84,6 +99,14 @@ public class OrderItem {
 
     public void setVariant(ProductVariant variant) {
         this.variant = variant;
+    }
+
+    public String getProductTitle() {
+        return productTitle;
+    }
+
+    public void setProductTitle(String productTitle) {
+        this.productTitle = productTitle;
     }
 
     public String getProductName() {

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/style.css" />
@@ -82,6 +82,13 @@
             th:href="@{/dashboard(view='users')}">
             Manage Users
           </a>
+          <a
+            sec:authorize="hasRole('ADMIN')"
+            class="dashboard-console-link"
+            th:classappend="${activeDashboardView == 'suppliers'} ? ' is-active'"
+            th:href="@{/dashboard(view='suppliers')}">
+            Supplier Approvals
+          </a>
 
           <a
             class="dashboard-console-link"
@@ -121,6 +128,7 @@
             <h2 th:if="${activeDashboardView == 'customers'}">Customer Management / CRM</h2>
             <h2 th:if="${activeDashboardView == 'audit'}">System Audit Logs</h2>
             <h2 th:if="${activeDashboardView == 'users'}">Customer &amp; Seller Management</h2>
+            <h2 th:if="${activeDashboardView == 'suppliers'}">Pending Supplier Approvals</h2>
             <h2 th:if="${activeDashboardView == 'settings'}">Account Settings</h2>
 
             <p th:if="${activeDashboardView == 'overview' and isAdminDashboard}">
@@ -152,6 +160,9 @@
             </p>
             <p th:if="${activeDashboardView == 'users'}">
               Review customer and seller accounts, adjust seller access, and change account status without leaving the admin workspace.
+            </p>
+            <p th:if="${activeDashboardView == 'suppliers'}">
+              Review new seller applications and grant or deny marketplace access.
             </p>
             <p th:if="${activeDashboardView == 'settings'}">
               Update identity details, change password, and manage account status directly from the workspace.
@@ -1077,6 +1088,54 @@
                 </form>
               </div>
             </nav>
+          </section>
+        </section>
+
+        <section th:if="${activeDashboardView == 'suppliers' and isAdminDashboard}" class="dashboard-console-stack">
+          <section class="panel-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Supplier Onboarding</p>
+                <h2>Pending Applications</h2>
+              </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(pendingSuppliers)}" class="empty-state">
+              <h3>No pending supplier applications</h3>
+              <p>All seller applications have been reviewed. New submissions will appear here when sellers register from the storefront.</p>
+            </div>
+
+            <div th:if="${!#lists.isEmpty(pendingSuppliers)}" class="table-wrap">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Store Name</th>
+                    <th>Contact</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:each="supplier : ${pendingSuppliers}">
+                    <td>
+                      <strong th:text="${supplier.name}">Store Name</strong>
+                    </td>
+                    <td>
+                      <div th:text="${supplier.phone}">Phone</div>
+                      <div class="product-meta" th:text="${supplier.email}">email@example.com</div>
+                    </td>
+                    <td th:text="${#temporals.format(supplier.createdAt, 'dd MMM yyyy, HH:mm')}">23 Apr 2026, 10:00</td>
+                    <td>
+                      <span class="status-badge status-processing" th:text="${supplier.status}">PENDING</span>
+                    </td>
+                    <td>
+                      <a class="btn btn-outline-accent btn-compact" th:href="@{/admin/suppliers/{id}/review(id=${supplier.id})}">Review</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </section>
         </section>
 
