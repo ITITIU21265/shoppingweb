@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private static final Set<String> ADMIN_DASHBOARD_VIEWS =
-            Set.of("overview", "orders", "products", "customers", "marketing", "audit", "users", "settings");
+            Set.of("overview", "orders", "products", "customers", "marketing", "audit", "users", "suppliers", "settings");
     private static final Set<String> SELLER_DASHBOARD_VIEWS =
             Set.of("overview", "orders", "products", "marketing", "settings");
 

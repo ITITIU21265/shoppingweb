@@ -40,3 +40,8 @@ build/
 .vscode/
 
 node_modules/
+
+# Environment & local secrets (12-Factor compliance)
+.env
+config/application-local.properties
+application-local.properties

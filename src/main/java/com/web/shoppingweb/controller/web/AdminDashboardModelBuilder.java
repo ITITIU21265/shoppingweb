@@ -184,6 +184,7 @@ public class AdminDashboardModelBuilder {
         model.addAttribute("dashboardManagedUsers", pagedManagedUsers);
         model.addAttribute("latestSupplierByUserId", latestSupplierByUserId);
         model.addAttribute("pendingSupplierByUserId", pendingSupplierByUserId);
+        model.addAttribute("pendingSuppliers", pendingSupplierByUserId.values());
         model.addAttribute("approvedSupplierByUserId", approvedSupplierByUserId);
         model.addAttribute("managedUserQuery", managedUserQuery);
         model.addAttribute("managedUserRoleFilter", managedUserRoleFilter);

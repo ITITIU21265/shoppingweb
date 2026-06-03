@@ -1130,7 +1130,7 @@
                       <span class="status-badge status-processing" th:text="${supplier.status}">PENDING</span>
                     </td>
                     <td>
-                      <a class="btn btn-outline-accent btn-compact" th:href="@{/admin/suppliers/{id}/review(id=${supplier.id})}">Review</a>
+                      <a class="btn btn-outline-accent btn-compact" th:href="@{/admin/suppliers/review/{userId}(userId=${supplier.seller.id})}">Review</a>
                     </td>
                   </tr>
                 </tbody>
