@@ -24,57 +24,28 @@ import com.web.shoppingweb.entity.order.OrderItem;
 import com.web.shoppingweb.entity.order.OrderStatus;
 import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.entity.product.ProductVariant;
-import com.web.shoppingweb.entity.product.ProductVariantStatus;
 import com.web.shoppingweb.entity.supplier.Supplier;
-import com.web.shoppingweb.entity.supplier.SupplierStatus;
-import com.web.shoppingweb.repository.order.OrderItemRepository;
-import com.web.shoppingweb.repository.order.OrderRepository;
-import com.web.shoppingweb.repository.product.ProductRepository;
-import com.web.shoppingweb.repository.product.ProductVariantRepository;
-import com.web.shoppingweb.repository.supplier.SupplierRepository;
-import com.web.shoppingweb.service.ProductService;
-import com.web.shoppingweb.service.UserService;
+import com.web.shoppingweb.service.AdminDashboardService;
+import com.web.shoppingweb.service.AdminDashboardService.AdminDashboardData;
 
 @Component
 public class AdminDashboardModelBuilder {
 
-    private static final int DASHBOARD_PRODUCT_LIMIT = 8;
     private static final int DASHBOARD_ORDER_LIMIT = 12;
     private static final int DASHBOARD_USER_PREVIEW_LIMIT = 6;
     private static final int MANAGED_USER_PAGE_SIZE = 10;
-    private static final int LOW_STOCK_THRESHOLD = 5;
     private static final BigDecimal CRM_VIP_THRESHOLD = new BigDecimal("5000000");
     private static final DateTimeFormatter SHORT_DATE_TIME = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
 
-    private final UserService userService;
-    private final ProductService productService;
-    private final ProductRepository productRepository;
-    private final ProductVariantRepository productVariantRepository;
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final SupplierRepository supplierRepository;
+    private final AdminDashboardService adminDashboardService;
 
-    public AdminDashboardModelBuilder(UserService userService,
-                                      ProductService productService,
-                                      ProductRepository productRepository,
-                                      ProductVariantRepository productVariantRepository,
-                                      OrderRepository orderRepository,
-                                      OrderItemRepository orderItemRepository,
-                                      SupplierRepository supplierRepository) {
-        this.userService = userService;
-        this.productService = productService;
-        this.productRepository = productRepository;
-        this.productVariantRepository = productVariantRepository;
-        this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
-        this.supplierRepository = supplierRepository;
+    public AdminDashboardModelBuilder(AdminDashboardService adminDashboardService) {
+        this.adminDashboardService = adminDashboardService;
     }
 
     public void populate(Model model, DashboardRequest request) {
-        List<UserResponseDTO> users = userService.getAllUsers().stream()
-                .sorted(Comparator.comparing(UserResponseDTO::getCreatedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+        AdminDashboardData dashboardData = adminDashboardService.loadDashboard(request.orderId());
+        List<UserResponseDTO> users = dashboardData.users();
         List<UserResponseDTO> customerUsers = users.stream()
                 .filter(user -> "CUSTOMER".equalsIgnoreCase(user.getRole()))
                 .toList();
@@ -84,24 +55,14 @@ public class AdminDashboardModelBuilder {
         List<UserResponseDTO> managedUsers = users.stream()
                 .filter(user -> !"ADMIN".equalsIgnoreCase(user.getRole()))
                 .toList();
-        Map<Long, Supplier> latestSupplierByUserId = buildLatestSupplierByUserId();
-        Map<Long, Supplier> pendingSupplierByUserId = filterSuppliersByStatus(latestSupplierByUserId, SupplierStatus.PENDING);
-        Map<Long, Supplier> approvedSupplierByUserId = filterSuppliersByStatus(latestSupplierByUserId, SupplierStatus.APPROVED);
-        List<Order> allOrders = orderRepository.findAll().stream()
-                .sorted(Comparator.comparing(Order::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
-        List<Product> allProducts = productRepository.findAll().stream()
-                .sorted(Comparator.comparing(Product::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
-        List<Product> latestProducts = allProducts.stream()
-                .limit(DASHBOARD_PRODUCT_LIMIT)
-                .toList();
-        List<ProductVariant> lowStockVariants =
-                productVariantRepository.findTop6ByStockQtyLessThanEqualAndStatusOrderByStockQtyAscIdAsc(
-                        LOW_STOCK_THRESHOLD,
-                        ProductVariantStatus.ACTIVE
-                );
-        List<OrderItem> allOrderItems = orderItemRepository.findAll();
+        Map<Long, Supplier> latestSupplierByUserId = dashboardData.latestSupplierByUserId();
+        Map<Long, Supplier> pendingSupplierByUserId = dashboardData.pendingSupplierByUserId();
+        Map<Long, Supplier> approvedSupplierByUserId = dashboardData.approvedSupplierByUserId();
+        List<Order> allOrders = dashboardData.allOrders();
+        List<Product> allProducts = dashboardData.allProducts();
+        List<Product> latestProducts = dashboardData.latestProducts();
+        List<ProductVariant> lowStockVariants = dashboardData.lowStockVariants();
+        List<OrderItem> allOrderItems = dashboardData.allOrderItems();
 
         long activeManagedUsers = users.stream()
                 .filter(user -> !"ADMIN".equalsIgnoreCase(user.getRole()))
@@ -161,10 +122,8 @@ public class AdminDashboardModelBuilder {
         List<Order> dashboardOrders = allOrders.stream()
                 .limit(DASHBOARD_ORDER_LIMIT)
                 .toList();
-        Order selectedAdminOrder = resolveSelectedOrder(allOrders, request.orderId());
-        List<OrderItem> selectedAdminOrderItems = selectedAdminOrder == null
-                ? Collections.emptyList()
-                : orderItemRepository.findByOrderOrderByIdAsc(selectedAdminOrder);
+        Order selectedAdminOrder = dashboardData.selectedOrder();
+        List<OrderItem> selectedAdminOrderItems = dashboardData.selectedOrderItems();
 
         model.addAttribute("adminScopeLabel", "Toan bo he thong");
         model.addAttribute("adminManagedUsers", customerUsers.size() + sellerUsers.size());
@@ -173,12 +132,8 @@ public class AdminDashboardModelBuilder {
         model.addAttribute("adminTotalProducts", allProducts.size());
         model.addAttribute("adminTotalOrders", allOrders.size());
         model.addAttribute("adminTotalRevenue", adminTotalRevenue);
-        model.addAttribute("adminLowStockCount",
-                productVariantRepository.countByStockQtyLessThanEqualAndStatus(
-                        LOW_STOCK_THRESHOLD,
-                        ProductVariantStatus.ACTIVE
-                ));
-        model.addAttribute("adminCategoryCount", productService.getAvailableCategories().size());
+        model.addAttribute("adminLowStockCount", dashboardData.lowStockCount());
+        model.addAttribute("adminCategoryCount", dashboardData.categoryCount());
         model.addAttribute("customerCount", customerUsers.size());
         model.addAttribute("sellerCount", sellerUsers.size());
         model.addAttribute("dashboardManagedUsers", pagedManagedUsers);
@@ -230,28 +185,6 @@ public class AdminDashboardModelBuilder {
 
         String normalized = requestedSegment.trim().toLowerCase(Locale.ROOT);
         return Set.of("all", "vip", "new_no_order", "active").contains(normalized) ? normalized : "all";
-    }
-
-    private Map<Long, Supplier> buildLatestSupplierByUserId() {
-        Map<Long, Supplier> suppliersByUserId = new LinkedHashMap<>();
-        supplierRepository.findAll().stream()
-                .filter(supplier -> supplier.getSeller() != null && supplier.getSeller().getId() != null)
-                .sorted(Comparator.comparing(
-                        Supplier::getCreatedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                ))
-                .forEach(supplier -> suppliersByUserId.putIfAbsent(supplier.getSeller().getId(), supplier));
-        return suppliersByUserId;
-    }
-
-    private Map<Long, Supplier> filterSuppliersByStatus(Map<Long, Supplier> suppliersByUserId, SupplierStatus status) {
-        Map<Long, Supplier> filteredSuppliers = new LinkedHashMap<>();
-        suppliersByUserId.forEach((userId, supplier) -> {
-            if (supplier.getStatus() == status) {
-                filteredSuppliers.put(userId, supplier);
-            }
-        });
-        return filteredSuppliers;
     }
 
     private String normalizeManagedUserRoleFilter(String requestedRoleFilter) {
@@ -379,17 +312,6 @@ public class AdminDashboardModelBuilder {
         @SuppressWarnings("unchecked")
         List<Order> orders = (List<Order>) selectedCustomerProfile.get("orders");
         return orders == null ? Collections.emptyList() : orders;
-    }
-
-    private Order resolveSelectedOrder(List<Order> allOrders, Long orderId) {
-        if (orderId == null) {
-            return null;
-        }
-
-        return allOrders.stream()
-                .filter(order -> Objects.equals(order.getId(), orderId))
-                .findFirst()
-                .orElse(null);
     }
 
     private List<Map<String, Object>> buildRevenueSeries(List<Order> allOrders) {
