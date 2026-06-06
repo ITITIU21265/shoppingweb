@@ -45,3 +45,7 @@ node_modules/
 .env
 config/application-local.properties
 application-local.properties
+
+# Local/generated seed data classes
+src/main/java/com/web/shoppingweb/config/OrderDataSeeder.java
+src/main/java/com/web/shoppingweb/config/SystemDataInitializer.java
