@@ -17,7 +17,11 @@
       <header>
         <p class="eyebrow">Something went wrong</p>
         <h1>We could not complete that request.</h1>
-        <p>Please return to the catalog and try again.</p>
+        <p class="form-alert"
+           th:if="${errorMessage}"
+           th:text="${errorMessage}">
+          Please return to the catalog and try again.
+        </p>
       </header>
       <a class="btn btn-primary" href="/catalog">Back to Catalog</a>
     </main>

@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ import com.web.shoppingweb.entity.product.ProductVariant;
 import com.web.shoppingweb.entity.product.ProductVariantStatus;
 import com.web.shoppingweb.entity.user.User;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
+import com.web.shoppingweb.exception.SelfPurchaseException;
 import com.web.shoppingweb.repository.cart.CartItemRepository;
 import com.web.shoppingweb.repository.cart.CartRepository;
 import com.web.shoppingweb.repository.order.OrderItemRepository;
@@ -106,6 +108,7 @@ public class OrderServiceImpl implements OrderService {
             }
             Product product = variant.getProduct();
             int quantity = cartItem.getQuantity();
+            validateNotSelfPurchase(user, product);
             validateCheckoutItem(product, variant, quantity);
 
             long unitPriceAmount = defaultAmount(variant.getPriceAmount());
@@ -191,6 +194,18 @@ public class OrderServiceImpl implements OrderService {
         }
         if (variant.getStockQty() == null || variant.getStockQty() < quantity) {
             throw new IllegalArgumentException("Not enough stock for \"" + product.getName() + "\".");
+        }
+    }
+
+    private void validateNotSelfPurchase(User buyer, Product product) {
+        User seller = product.getSeller();
+        if (buyer.getId() != null
+                && seller != null
+                && seller.getId() != null
+                && Objects.equals(buyer.getId(), seller.getId())) {
+            throw new SelfPurchaseException(
+                    "Sellers cannot purchase their own inventory."
+            );
         }
     }
 

@@ -28,6 +28,20 @@
       body: buildBody(extraParams),
       credentials: 'same-origin',
       redirect: 'manual'
+    }).then(function (response) {
+      if (response.ok || response.type === 'opaqueredirect') {
+        return response;
+      }
+
+      return response.text().then(function (body) {
+        var parser = new DOMParser();
+        var errorDocument = parser.parseFromString(body, 'text/html');
+        var errorElement = errorDocument.querySelector('.form-alert');
+        var message = errorElement && errorElement.textContent
+          ? errorElement.textContent.trim()
+          : 'The request could not be completed.';
+        throw new Error(message);
+      });
     });
   }
 
@@ -85,8 +99,8 @@
 
     postForm('/cart/items/' + id, { quantity: 1 }).then(function () {
       setCartBadge(getCartBadgeCount() + 1);
-    }).catch(function () {
-      location.reload();
+    }).catch(function (error) {
+      window.alert(error.message);
     }).finally(function () {
       btn.removeAttribute('data-loading');
     });

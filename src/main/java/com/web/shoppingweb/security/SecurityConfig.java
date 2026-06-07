@@ -15,14 +15,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.web.shoppingweb.service.impl.CustomUserDetailsService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final WebExpressionAuthorizationManager SHOPPING_ACCESS =
+            new WebExpressionAuthorizationManager("hasAnyRole('CUSTOMER','SELLER') and !hasRole('ADMIN')");
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
@@ -79,6 +85,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/cart", "/api/cart/**", "/api/orders", "/api/orders/**", "/api/saved", "/api/saved/**")
+                    .access(SHOPPING_ACCESS)
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
@@ -103,7 +111,9 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/profile",
                         "/account/**",
-                        "/supplier/**",
+                        "/supplier/**"
+                ).authenticated()
+                .requestMatchers(
                         "/saved",
                         "/saved/**",
                         "/cart",
@@ -112,7 +122,7 @@ public class SecurityConfig {
                         "/checkout/**",
                         "/orders",
                         "/orders/**"
-                ).authenticated()
+                ).access(SHOPPING_ACCESS)
                 .requestMatchers(HttpMethod.POST, "/products").hasAnyRole("ADMIN", "SELLER")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
@@ -132,12 +142,28 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
             )
             .exceptionHandling(exception -> exception
-                .accessDeniedHandler((request, response, accessDeniedException) ->
-                        response.sendRedirect("/catalog?denied=true"))
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    if (isShoppingPath(request.getRequestURI())) {
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                        return;
+                    }
+                    response.sendRedirect("/catalog?denied=true");
+                })
             )
             .authenticationProvider(authenticationProvider())
             .addFilterAfter(userStatusEnforcementFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private static boolean isShoppingPath(String requestUri) {
+        return requestUri.equals("/cart")
+                || requestUri.startsWith("/cart/")
+                || requestUri.equals("/checkout")
+                || requestUri.startsWith("/checkout/")
+                || requestUri.equals("/orders")
+                || requestUri.startsWith("/orders/")
+                || requestUri.equals("/saved")
+                || requestUri.startsWith("/saved/");
     }
 }

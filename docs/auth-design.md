@@ -49,16 +49,16 @@ Security được tách thành hai `SecurityFilterChain` trong `SecurityConfig`.
 | `/api/products` | `POST` | `ADMIN` or `SELLER` |
 | `/api/products/{id}` | `PUT` | `ADMIN` or `SELLER` |
 | `/api/products/{id}` | `DELETE` | `ADMIN` or `SELLER` |
-| `/api/saved` | `GET` | Authenticated |
-| `/api/saved` | `POST` | Authenticated |
-| `/api/saved` | `DELETE` | Authenticated |
-| `/api/cart` | `GET` | Authenticated |
-| `/api/cart/items` | `POST` | Authenticated |
-| `/api/cart/items/{variantId}` | `PUT` | Authenticated |
-| `/api/cart/items/{variantId}` | `DELETE` | Authenticated |
-| `/api/orders` | `GET` | Authenticated |
-| `/api/orders/{orderId}` | `GET` | Authenticated |
-| `/api/orders` | `POST` | Authenticated |
+| `/api/saved` | `GET` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/saved` | `POST` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/saved` | `DELETE` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/cart` | `GET` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/cart/items` | `POST` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/cart/items/{variantId}` | `PUT` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/cart/items/{variantId}` | `DELETE` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/orders` | `GET` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/orders/{orderId}` | `GET` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/api/orders` | `POST` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
 | `/api/admin/users` | `GET` | `ADMIN` |
 | `/api/admin/users/{id}/role` | `PUT` | `ADMIN` |
 | `/api/admin/users/{id}/status` | `PATCH` | `ADMIN` |
@@ -75,13 +75,17 @@ Security được tách thành hai `SecurityFilterChain` trong `SecurityConfig`.
 | `/profile` | Authenticated |
 | `/account/**` | Authenticated |
 | `/supplier/**` | Authenticated |
-| `/saved/**` | Authenticated |
-| `/cart/**` | Authenticated |
-| `/checkout/**` | Authenticated |
-| `/orders/**` | Authenticated |
+| `/saved/**` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/cart/**` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/checkout/**` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
+| `/orders/**` | `CUSTOMER` or `SELLER`, excluding `ADMIN` |
 | `/dashboard/**` | `ADMIN` or `SELLER` |
 | `POST /products` | `ADMIN` or `SELLER` |
 | `/admin/**` | `ADMIN` |
+
+Shopping business rule: Sellers may use customer shopping features, but they cannot add or checkout products that they own. Administrators are denied access to cart, saved-item, checkout, and personal-order endpoints.
+
+For Web MVC requests, a self-purchase attempt returns `400 Bad Request` with the business-rule message. The catalog interaction script updates the cart badge only after a successful request and displays the server message when the request is rejected.
 
 Lưu ý: dashboard template có phần customer view, nhưng security hiện tại chỉ cho `ADMIN` và `SELLER` vào `/dashboard`. Customer vẫn dùng các route như `/profile`, `/cart`, `/orders`, `/saved`.
 

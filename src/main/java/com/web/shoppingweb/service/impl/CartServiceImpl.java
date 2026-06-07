@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.web.shoppingweb.entity.product.ProductVariant;
 import com.web.shoppingweb.entity.product.ProductVariantStatus;
 import com.web.shoppingweb.entity.user.User;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
+import com.web.shoppingweb.exception.SelfPurchaseException;
 import com.web.shoppingweb.repository.cart.CartItemRepository;
 import com.web.shoppingweb.repository.cart.CartRepository;
 import com.web.shoppingweb.repository.product.ProductRepository;
@@ -92,6 +94,7 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(productId)
                 .filter(Product::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        validateNotSelfPurchase(user, product);
 
         Cart cart = getOrCreateActiveCart(user);
         ProductVariant variant = resolveDefaultVariant(product);
@@ -229,6 +232,18 @@ public class CartServiceImpl implements CartService {
     private User getUser(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private void validateNotSelfPurchase(User buyer, Product product) {
+        User seller = product.getSeller();
+        if (buyer.getId() != null
+                && seller != null
+                && seller.getId() != null
+                && Objects.equals(buyer.getId(), seller.getId())) {
+            throw new SelfPurchaseException(
+                    "Sellers cannot add their own products to the shopping cart."
+            );
+        }
     }
 
     private long toMinorAmount(BigDecimal amount) {
