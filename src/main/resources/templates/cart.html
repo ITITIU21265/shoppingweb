@@ -157,13 +157,13 @@
         <div class="panel-header">
           <div>
             <p class="eyebrow">Saved Items</p>
-            <h2>Sản phẩm bạn đã lưu</h2>
+            <h2>Your Saved Products</h2>
           </div>
         </div>
 
         <div th:if="${#lists.isEmpty(savedProducts)}" class="empty-state saved-cart-empty">
-          <h3>Chưa có sản phẩm đã lưu.</h3>
-          <p>Nhấn Save trên sản phẩm trong catalog để lưu lại và mua sau.</p>
+          <h3>You have no saved products yet.</h3>
+          <p>Select Save on a catalog product to keep it for later.</p>
           <a class="btn btn-primary" href="/catalog">Browse catalog</a>
         </div>
 

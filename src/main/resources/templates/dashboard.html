@@ -195,7 +195,7 @@
             <article class="dashboard-console-metric">
               <span>Total Revenue</span>
               <strong th:text="'$' + ${#numbers.formatDecimal(adminTotalRevenue, 1, 2)}">$0.00</strong>
-              <small th:text="${adminScopeLabel}">Toan bo he thong</small>
+              <small th:text="${adminScopeLabel}">Entire system</small>
             </article>
           </div>
 
@@ -582,17 +582,17 @@
               <small>Orders per customer</small>
             </article>
             <article class="dashboard-console-metric">
-              <span>Khach rac</span>
+              <span>Unconverted Customers</span>
               <strong th:text="${customerNoOrderCount}">0</strong>
               <small>Registered but never purchased</small>
             </article>
           </div>
 
           <div class="dashboard-filter-row">
-            <a class="filter-chip" th:classappend="${customerSegment == 'all'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='all')}">Tat ca</a>
+            <a class="filter-chip" th:classappend="${customerSegment == 'all'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='all')}">All</a>
             <a class="filter-chip" th:classappend="${customerSegment == 'vip'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='vip')}">VIP</a>
-            <a class="filter-chip" th:classappend="${customerSegment == 'new_no_order'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='new_no_order')}">Khach moi</a>
-            <a class="filter-chip" th:classappend="${customerSegment == 'active'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='active')}">Dang hoat dong</a>
+            <a class="filter-chip" th:classappend="${customerSegment == 'new_no_order'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='new_no_order')}">New Customers</a>
+            <a class="filter-chip" th:classappend="${customerSegment == 'active'} ? ' is-active'" th:href="@{/dashboard(view='customers',segment='active')}">Active</a>
           </div>
 
           <section class="panel-card">
@@ -635,7 +635,7 @@
                     <td th:text="${profile.orderCount}">0</td>
                     <td th:text="${profile.user.createdAt != null ? #temporals.format(profile.user.createdAt, 'dd MMM yyyy') : '-'}">23 Apr 2026</td>
                     <td>
-                      <a class="text-link" th:href="@{/dashboard(view='customers',segment=${customerSegment},customerId=${profile.user.id})}">Xem chi tiet</a>
+                      <a class="text-link" th:href="@{/dashboard(view='customers',segment=${customerSegment},customerId=${profile.user.id})}">View Details</a>
                     </td>
                   </tr>
                 </tbody>
@@ -672,12 +672,12 @@
             <div class="dashboard-console-actions dashboard-console-actions-compact">
               <a class="action-tile" th:href="|mailto:${selectedCustomerProfile.user.email}?subject=StyleHub%20Promo%20Offer|">
                 <p class="eyebrow">Marketing</p>
-                <h3>Gui Email khuyen mai</h3>
+                <h3>Send Promotional Email</h3>
                 <p>Open an email draft for this customer directly from the CRM view.</p>
               </a>
               <a th:if="${selectedCustomerProfile.orderCount == 0}" class="action-tile" th:href="|mailto:${selectedCustomerProfile.user.email}?subject=StyleHub%20Activation%20Voucher|">
                 <p class="eyebrow">Activation</p>
-                <h3>Gui ma giam gia kich hoat</h3>
+                <h3>Send Activation Discount Code</h3>
                 <p>Reach customers who registered but have not completed their first purchase.</p>
               </a>
             </div>

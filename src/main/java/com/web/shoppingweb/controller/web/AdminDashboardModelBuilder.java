@@ -125,7 +125,7 @@ public class AdminDashboardModelBuilder {
         Order selectedAdminOrder = dashboardData.selectedOrder();
         List<OrderItem> selectedAdminOrderItems = dashboardData.selectedOrderItems();
 
-        model.addAttribute("adminScopeLabel", "Toan bo he thong");
+        model.addAttribute("adminScopeLabel", "Entire system");
         model.addAttribute("adminManagedUsers", customerUsers.size() + sellerUsers.size());
         model.addAttribute("adminActiveManagedUsers", activeManagedUsers);
         model.addAttribute("adminBlockedManagedUsers", blockedManagedUsers);
