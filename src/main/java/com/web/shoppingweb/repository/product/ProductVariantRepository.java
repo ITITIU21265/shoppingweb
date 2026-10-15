@@ -34,6 +34,10 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             """)
     List<ProductVariant> findAllByIdInForUpdate(@Param("ids") List<Long> ids);
 
+    // Serialize price edits with checkout stock updates on the same variants.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<ProductVariant> findAllByProduct_IdOrderByIdAsc(Long productId);
+
     boolean existsByProduct(Product product);
 
     long countByProduct_Seller_UsernameAndStockQtyLessThanEqualAndStatus(String username,

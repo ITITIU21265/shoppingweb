@@ -1,5 +1,10 @@
 package com.web.shoppingweb.controller.web;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.web.shoppingweb.dto.cart.CartItemResponseDTO;
+import com.web.shoppingweb.dto.cart.CartSummaryDTO;
 import com.web.shoppingweb.security.SecurityUtils;
 import com.web.shoppingweb.service.CartService;
 import com.web.shoppingweb.service.SavedService;
@@ -31,9 +38,23 @@ public class CartController {
     @GetMapping
     public String cart(Authentication authentication, Model model) {
         String username = SecurityUtils.requireCurrentUsername(authentication);
-        model.addAttribute("cartSummary", cartService.getActiveCart(username));
+        CartSummaryDTO cartSummary = cartService.getActiveCart(username);
+        Map<String, List<CartItemResponseDTO>> cartItemsBySeller = cartSummary.getItems().stream()
+                .collect(Collectors.groupingBy(
+                        this::resolveSellerName,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        model.addAttribute("cartSummary", cartSummary);
+        model.addAttribute("cartItemsBySeller", cartItemsBySeller);
         model.addAttribute("savedProducts", savedService.getSavedProducts(username));
         return "cart";
+    }
+
+    private String resolveSellerName(CartItemResponseDTO item) {
+        String sellerName = item.getSellerName();
+        return sellerName == null || sellerName.isBlank() ? "Unknown Seller" : sellerName;
     }
 
     @PostMapping("/items/{productId}")

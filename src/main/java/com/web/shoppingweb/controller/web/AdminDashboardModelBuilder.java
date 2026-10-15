@@ -79,7 +79,7 @@ public class AdminDashboardModelBuilder {
                 .filter(order -> order.getStatus() != OrderStatus.CANCELLED)
                 .map(Order::getSubtotalAmount)
                 .filter(Objects::nonNull)
-                .map(this::fromMinorAmount)
+                .map(this::toDisplayAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Map<String, Object>> customerProfiles = buildCustomerProfiles(customerUsers, allOrders);
@@ -251,7 +251,7 @@ public class AdminDashboardModelBuilder {
             BigDecimal totalSpent = customerOrders.stream()
                     .map(Order::getSubtotalAmount)
                     .filter(Objects::nonNull)
-                    .map(this::fromMinorAmount)
+                    .map(this::toDisplayAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             long orderCount = customerOrders.size();
 
@@ -327,7 +327,7 @@ public class AdminDashboardModelBuilder {
             }
             LocalDate date = order.getCreatedAt().toLocalDate();
             if (totals.containsKey(date)) {
-                totals.put(date, totals.get(date).add(fromMinorAmount(order.getSubtotalAmount())));
+                totals.put(date, totals.get(date).add(toDisplayAmount(order.getSubtotalAmount())));
             }
         }
 
@@ -362,7 +362,7 @@ public class AdminDashboardModelBuilder {
             String category = item.getProduct().getCategory() != null
                     ? item.getProduct().getCategory().getDisplayName()
                     : "Uncategorized";
-            totals.merge(category, fromMinorAmount(item.getLineTotalAmount()), BigDecimal::add);
+            totals.merge(category, toDisplayAmount(item.getLineTotalAmount()), BigDecimal::add);
         }
 
         BigDecimal grandTotal = totals.values().stream()
@@ -516,10 +516,10 @@ public class AdminDashboardModelBuilder {
         return "green";
     }
 
-    private BigDecimal fromMinorAmount(Long amount) {
+    private BigDecimal toDisplayAmount(Long amount) {
         if (amount == null) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(amount, 2);
+        return BigDecimal.valueOf(amount);
     }
 }

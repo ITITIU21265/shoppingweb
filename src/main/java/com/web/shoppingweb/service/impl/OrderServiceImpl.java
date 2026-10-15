@@ -135,6 +135,14 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingAddress(shippingAddress);
         order.setTotalQuantity(totalQuantity);
         order.setSubtotalAmount(subtotalAmount);
+        // No shipping, tax or promotion calculator is configured yet.
+        order.setShippingAmount(0L);
+        order.setTaxAmount(0L);
+        order.setDiscountAmount(0L);
+        order.setCurrency("VND");
+        order.setTotalAmount(Math.subtractExact(
+                Math.addExact(Math.addExact(subtotalAmount, order.getShippingAmount()), order.getTaxAmount()),
+                order.getDiscountAmount()));
         Order savedOrder = orderRepository.save(order);
 
         List<OrderItem> orderItems = new ArrayList<>();
@@ -306,7 +314,7 @@ public class OrderServiceImpl implements OrderService {
                 formatTimestamp(order.getCreatedAt()),
                 order.getShippingAddress(),
                 order.getTotalQuantity() == null ? 0L : order.getTotalQuantity(),
-                fromMinorAmount(order.getSubtotalAmount()),
+                toDisplayAmount(order.getSubtotalAmount()),
                 order.getCreatedAt()
         );
     }
@@ -326,7 +334,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getCustomerEmail(),
                 order.getShippingAddress(),
                 order.getTotalQuantity() == null ? 0L : order.getTotalQuantity(),
-                fromMinorAmount(order.getSubtotalAmount()),
+                toDisplayAmount(order.getSubtotalAmount()),
                 order.getCreatedAt(),
                 orderItems
         );
@@ -342,8 +350,8 @@ public class OrderServiceImpl implements OrderService {
                 item.getProductImageUrl(),
                 item.getSku(),
                 item.getQuantity(),
-                fromMinorAmount(item.getUnitPriceAmount()),
-                fromMinorAmount(item.getLineTotalAmount())
+                toDisplayAmount(item.getUnitPriceAmount()),
+                toDisplayAmount(item.getLineTotalAmount())
         );
     }
 
@@ -380,11 +388,11 @@ public class OrderServiceImpl implements OrderService {
         return amount == null ? 0L : amount;
     }
 
-    private BigDecimal fromMinorAmount(Long amount) {
+    private BigDecimal toDisplayAmount(Long amount) {
         if (amount == null) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(amount, 2);
+        return BigDecimal.valueOf(amount);
     }
 
     private String formatTimestamp(LocalDateTime timestamp) {

@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.web.shoppingweb.entity.product.Product;
@@ -33,6 +36,22 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findTop5BySeller_UsernameOrderByCreatedAtDesc(String username);
 
     Optional<Product> findBySlugAndActiveTrue(String slug);
+
+    @Query(value = """
+            SELECT p.*
+            FROM product_recommendations pr
+            JOIN products p ON p.id = pr.recommended_product_id
+            WHERE pr.target_product_id = :targetId
+              AND p.active = 1
+              AND p.status = 'ACTIVE'
+            ORDER BY pr.rank_order ASC
+            """, nativeQuery = true)
+    List<Product> findRecommendedProductsFromCache(@Param("targetId") Long targetId,
+                                                   Pageable pageable);
+
+    default List<Product> findRecommendedProducts(Long targetId, int limit) {
+        return findRecommendedProductsFromCache(targetId, PageRequest.of(0, limit));
+    }
 
     boolean existsBySlug(String slug);
 

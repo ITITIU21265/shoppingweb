@@ -434,7 +434,7 @@
                       <strong th:text="${order.customerName}">Customer</strong>
                       <div class="product-meta" th:text="${order.customerEmail}">email@example.com</div>
                     </td>
-                    <td th:text="${order.totalQuantity}">0</td>
+                    <td th:text="${isAdminDashboard ? order.totalQuantity : order.itemsCount}">0</td>
                     <td th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(order.subtotalAmount, 2), 1, 2)}">$0.00</td>
                     <td>
                       <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.status.displayName}">Confirmed</span>

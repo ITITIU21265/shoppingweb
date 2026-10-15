@@ -15,6 +15,11 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     List<OrderItem> findByOrderOrderByIdAsc(Order order);
 
+    List<OrderItem> findByOrderSeller_IdAndOrderSeller_Seller_UsernameOrderByIdAsc(Long orderSellerId,
+                                                                                   String username);
+
+    List<OrderItem> findByOrderSeller_Seller_UsernameOrderByIdAsc(String username);
+
     @Query("""
             select coalesce(sum(oi.lineTotalAmount), 0)
             from OrderItem oi

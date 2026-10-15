@@ -71,62 +71,67 @@
 
       <section th:if="${!#lists.isEmpty(cartSummary.items)}" class="cart-layout">
         <div class="cart-items-panel">
-          <article th:each="item : ${cartSummary.items}" class="cart-item-card">
-            <label class="cart-item-selector" th:for="'checkout-item-' + ${item.variantId}">
-              <input
-                class="cart-select-checkbox"
-                type="checkbox"
-                form="checkout-selection-form"
-                name="selectedVariantIds"
-                th:id="'checkout-item-' + ${item.variantId}"
-                th:value="${item.variantId}"
-                checked
-                aria-label="Select item for checkout"
-                th:attr="data-quantity=${item.quantity},data-line-total=${item.lineTotal}" />
-            </label>
-            <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
-              <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
-            </a>
-            <div class="cart-item-content">
-              <div>
-                <p class="eyebrow">Cart item</p>
-                <h2 th:text="${item.productName}">Product Name</h2>
-                <p class="product-meta" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
-              </div>
+          <div th:each="vendorEntry : ${cartItemsBySeller}" class="cart-vendor-panel card mb-4">
+            <div class="cart-vendor-header">
+              <h4>Sold by: <span th:text="${vendorEntry.key}">Seller Name</span></h4>
+            </div>
 
-              <div class="cart-item-actions">
-                <form
-                  class="quantity-form"
-                  method="post"
-                  th:action="@{/cart/items/{variantId}/quantity(variantId=${item.variantId})}"
-                  th:id="'quantity-form-' + ${item.variantId}">
-                  <label class="field">
-                    <span>Quantity</span>
-                    <input type="number" name="quantity" min="0" th:value="${item.quantity}" />
-                  </label>
-                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                </form>
+            <article th:each="item : ${vendorEntry.value}" class="cart-item-card">
+              <label class="cart-item-selector" th:for="'checkout-item-' + ${item.variantId}">
+                <input
+                  class="cart-select-checkbox"
+                  type="checkbox"
+                  form="checkout-selection-form"
+                  name="selectedVariantIds"
+                  th:id="'checkout-item-' + ${item.variantId}"
+                  th:value="${item.variantId}"
+                  checked
+                  aria-label="Select item for checkout"
+                  th:attr="data-quantity=${item.quantity},data-line-total=${item.lineTotal}" />
+              </label>
+              <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
+                <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+              </a>
+              <div class="cart-item-content">
+                <div>
+                  <h2 th:text="${item.productName}">Product Name</h2>
+                  <p class="product-meta cart-unit-price" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+                </div>
 
-                <div class="cart-item-action-buttons">
-                  <button
-                    class="btn btn-primary btn-cart-action"
-                    type="submit"
-                    th:attr="form='quantity-form-' + ${item.variantId}">
-                    Update
-                  </button>
-
-                  <form class="cart-remove-form" method="post" th:action="@{/cart/items/{variantId}/remove(variantId=${item.variantId})}">
+                <div class="cart-item-actions">
+                  <form
+                    class="quantity-form"
+                    method="post"
+                    th:action="@{/cart/items/{variantId}/quantity(variantId=${item.variantId})}"
+                    th:id="'quantity-form-' + ${item.variantId}">
+                    <label class="field">
+                      <span>Quantity</span>
+                      <input type="number" name="quantity" min="0" th:value="${item.quantity}" />
+                    </label>
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <button class="btn btn-outline-accent btn-cart-action" type="submit">Remove</button>
                   </form>
+
+                  <div class="cart-item-action-buttons">
+                    <button
+                      class="btn btn-primary btn-cart-action"
+                      type="submit"
+                      th:attr="form='quantity-form-' + ${item.variantId}">
+                      Update
+                    </button>
+
+                    <form class="cart-remove-form" method="post" th:action="@{/cart/items/{variantId}/remove(variantId=${item.variantId})}">
+                      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                      <button class="btn btn-outline-accent btn-cart-action" type="submit">Remove</button>
+                    </form>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="cart-item-total">
-              <span>Line total</span>
-              <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
-            </div>
-          </article>
+              <div class="cart-item-total">
+                <span>Line total</span>
+                <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+              </div>
+            </article>
+          </div>
         </div>
 
         <aside class="panel-card cart-summary-card">

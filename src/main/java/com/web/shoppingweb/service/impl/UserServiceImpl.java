@@ -77,11 +77,12 @@ public class UserServiceImpl implements UserService {
     //LOGIN + REFRESH TOKEN (Exercise 9.2)
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
+        String identifier = normalizeLoginIdentifier(loginRequest.getUsername());
 
         // 1. Authenticate username + password
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
+                        identifier,
                         loginRequest.getPassword()
                 )
         );
@@ -92,7 +93,6 @@ public class UserServiceImpl implements UserService {
         String accessToken = tokenProvider.generateToken(authentication);
 
         // 3. Get user from DB
-        String identifier = loginRequest.getUsername();
         User user = userRepository.findByEmailOrUsername(identifier, identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         ensureActive(user);
@@ -450,5 +450,9 @@ public class UserServiceImpl implements UserService {
             revokeAllRefreshTokens(user);
             throw new DisabledException("Account is no longer active");
         }
+    }
+
+    private String normalizeLoginIdentifier(String identifier) {
+        return identifier == null ? "" : identifier.trim();
     }
 }

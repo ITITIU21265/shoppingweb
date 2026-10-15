@@ -1,5 +1,6 @@
 package com.web.shoppingweb.service.impl;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
@@ -95,16 +96,14 @@ public class ProductServiceImpl implements ProductService {
         User seller = userRepository.findByUsername(sellerUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found"));
         ProductCategory category = ProductCategory.fromValue(dto.getCategory());
-        CategoryEntity categoryRef = resolveCategoryRef(category);
 
         Product product = new Product();
         product.setSeller(seller);
-        product.setCategoryRef(categoryRef);
+        synchronizeCategory(product, category);
         product.setName(dto.getName().trim());
         product.setTitle(dto.getName().trim());
         product.setDescription(dto.getDescription().trim());
-        product.setPrice(dto.getPrice());
-        product.setCategory(category);
+        product.setPrice(validatePrice(dto.getPrice()));
         product.setImageUrl(dto.getImageUrl().trim());
         product.setFeatured(dto.isFeatured());
         product.setActive(true);
@@ -113,7 +112,7 @@ public class ProductServiceImpl implements ProductService {
         product.setSlug(generateUniqueSlug(dto.getName()));
 
         Product savedProduct = productRepository.save(product);
-        ensureDefaultVariant(savedProduct);
+        ensureDefaultVariant(savedProduct, normalizeStockQty(dto.getStockQty()));
         return savedProduct;
     }
 
@@ -124,20 +123,28 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         assertProductOwnerOrAdmin(product, actor);
 
+        boolean priceChanged = product.getPrice() == null
+                || dto.getPrice() == null || product.getPrice().compareTo(dto.getPrice()) != 0;
         ProductCategory category = ProductCategory.fromValue(dto.getCategory());
-        CategoryEntity categoryRef = resolveCategoryRef(category);
 
-        product.setCategoryRef(categoryRef);
+        synchronizeCategory(product, category);
         product.setName(dto.getName().trim());
         product.setTitle(dto.getName().trim());
         product.setDescription(dto.getDescription().trim());
-        product.setPrice(dto.getPrice());
-        product.setCategory(category);
+        product.setPrice(validatePrice(dto.getPrice()));
         product.setImageUrl(dto.getImageUrl().trim());
         product.setFeatured(dto.isFeatured());
         product.setStatus(ProductStatus.ACTIVE);
         product.setActive(true);
 
+        if (priceChanged) {
+            long priceAmount = product.getPrice().longValueExact();
+            List<ProductVariant> variants = productVariantRepository.findAllByProduct_IdOrderByIdAsc(productId);
+            for (ProductVariant variant : variants) {
+                variant.setPriceAmount(priceAmount);
+            }
+            productVariantRepository.saveAll(variants);
+        }
         return productRepository.save(product);
     }
 
@@ -176,13 +183,35 @@ public class ProductServiceImpl implements ProductService {
         return candidate;
     }
 
+    private BigDecimal validatePrice(BigDecimal price) {
+        if (price == null || price.signum() <= 0) {
+            throw new IllegalArgumentException("Price must be positive.");
+        }
+        try {
+            // VND amounts are stored in whole dong, without a x100 conversion.
+            price.longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException("Price must be a whole VND amount within the supported range.", ex);
+        }
+        return price;
+    }
+
+    private void synchronizeCategory(Product product, ProductCategory category) {
+        if (category == null) {
+            throw new IllegalArgumentException("Category is required.");
+        }
+        CategoryEntity categoryRef = resolveCategoryRef(category);
+        product.setCategory(category);
+        product.setCategoryRef(categoryRef);
+    }
+
     private CategoryEntity resolveCategoryRef(ProductCategory category) {
         String slug = category.name().toLowerCase(Locale.ROOT).replace('_', '-');
         return categoryRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found for slug: " + slug));
     }
 
-    private void ensureDefaultVariant(Product product) {
+    private void ensureDefaultVariant(Product product, int stockQty) {
         if (productVariantRepository.existsByProduct(product)) {
             return;
         }
@@ -190,11 +219,15 @@ public class ProductServiceImpl implements ProductService {
         ProductVariant variant = new ProductVariant();
         variant.setProduct(product);
         variant.setSku("P" + product.getId() + "-DEFAULT");
-        variant.setPriceAmount(product.getPrice().movePointRight(2).longValueExact());
-        variant.setStockQty(100);
+        variant.setPriceAmount(product.getPrice().longValueExact());
+        variant.setStockQty(stockQty);
         variant.setDefault(true);
         variant.setStatus(ProductVariantStatus.ACTIVE);
         productVariantRepository.save(variant);
+    }
+
+    private int normalizeStockQty(Integer stockQty) {
+        return stockQty == null ? 0 : Math.max(stockQty, 0);
     }
 
     private User getUser(String username) {

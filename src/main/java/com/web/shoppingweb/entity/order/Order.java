@@ -58,6 +58,21 @@ public class Order {
     @Column(name = "subtotal_amount", nullable = false)
     private Long subtotalAmount;
 
+    @Column(name = "total_amount", nullable = false)
+    private Long totalAmount = 0L;
+
+    @Column(name = "shipping_amount", nullable = false)
+    private Long shippingAmount = 0L;
+
+    @Column(name = "tax_amount", nullable = false)
+    private Long taxAmount = 0L;
+
+    @Column(name = "discount_amount", nullable = false)
+    private Long discountAmount = 0L;
+
+    @Column(name = "currency", nullable = false, length = 3, columnDefinition = "char(3)")
+    private String currency = "VND";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -153,6 +168,46 @@ public class Order {
 
     public void setSubtotalAmount(Long subtotalAmount) {
         this.subtotalAmount = subtotalAmount;
+    }
+
+    public Long getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(Long totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public Long getShippingAmount() {
+        return shippingAmount;
+    }
+
+    public void setShippingAmount(Long shippingAmount) {
+        this.shippingAmount = shippingAmount;
+    }
+
+    public Long getTaxAmount() {
+        return taxAmount;
+    }
+
+    public void setTaxAmount(Long taxAmount) {
+        this.taxAmount = taxAmount;
+    }
+
+    public Long getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(Long discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public LocalDateTime getCreatedAt() {

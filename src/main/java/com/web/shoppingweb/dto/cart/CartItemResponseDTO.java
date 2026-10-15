@@ -9,6 +9,7 @@ public class CartItemResponseDTO {
     private String productName;
     private String productSlug;
     private String imageUrl;
+    private String sellerName;
     private int quantity;
     private BigDecimal unitPrice;
     private BigDecimal lineTotal;
@@ -21,6 +22,7 @@ public class CartItemResponseDTO {
                                String productName,
                                String productSlug,
                                String imageUrl,
+                               String sellerName,
                                int quantity,
                                BigDecimal unitPrice,
                                BigDecimal lineTotal) {
@@ -29,6 +31,7 @@ public class CartItemResponseDTO {
         this.productName = productName;
         this.productSlug = productSlug;
         this.imageUrl = imageUrl;
+        this.sellerName = sellerName;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
         this.lineTotal = lineTotal;
@@ -72,6 +75,14 @@ public class CartItemResponseDTO {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getSellerName() {
+        return sellerName;
+    }
+
+    public void setSellerName(String sellerName) {
+        this.sellerName = sellerName;
     }
 
     public int getQuantity() {

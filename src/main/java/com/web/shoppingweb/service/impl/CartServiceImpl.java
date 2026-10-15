@@ -1,7 +1,6 @@
 package com.web.shoppingweb.service.impl;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -176,8 +175,7 @@ public class CartServiceImpl implements CartService {
         ProductVariant variant = new ProductVariant();
         variant.setProduct(product);
         variant.setSku("P" + product.getId() + "-DEFAULT");
-        variant.setPriceAmount(toMinorAmount(product.getPrice()));
-        variant.setStockQty(100);
+        variant.setPriceAmount(product.getPrice().longValueExact());
         variant.setDefault(true);
         variant.setStatus(ProductVariantStatus.ACTIVE);
         return productVariantRepository.save(variant);
@@ -214,7 +212,7 @@ public class CartServiceImpl implements CartService {
     private CartItemResponseDTO toItemResponse(CartItem cartItem) {
         ProductVariant variant = cartItem.getVariant();
         Product product = variant.getProduct();
-        BigDecimal unitPrice = fromMinorAmount(variant.getPriceAmount());
+        BigDecimal unitPrice = toDisplayAmount(variant.getPriceAmount());
         BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
         return new CartItemResponseDTO(
@@ -223,10 +221,25 @@ public class CartServiceImpl implements CartService {
                 product.getName(),
                 product.getSlug(),
                 product.getImageUrl(),
+                resolveSellerName(product),
                 cartItem.getQuantity(),
                 unitPrice,
                 lineTotal
         );
+    }
+
+    private String resolveSellerName(Product product) {
+        User seller = product.getSeller();
+        if (seller == null) {
+            return "Unknown Seller";
+        }
+        if (seller.getFullName() != null && !seller.getFullName().isBlank()) {
+            return seller.getFullName();
+        }
+        if (seller.getUsername() != null && !seller.getUsername().isBlank()) {
+            return seller.getUsername();
+        }
+        return "Unknown Seller";
     }
 
     private User getUser(String username) {
@@ -246,16 +259,10 @@ public class CartServiceImpl implements CartService {
         }
     }
 
-    private long toMinorAmount(BigDecimal amount) {
-        return amount.multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.HALF_UP)
-                .longValueExact();
-    }
-
-    private BigDecimal fromMinorAmount(Long amount) {
+    private BigDecimal toDisplayAmount(Long amount) {
         if (amount == null) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(amount, 2);
+        return BigDecimal.valueOf(amount);
     }
 }

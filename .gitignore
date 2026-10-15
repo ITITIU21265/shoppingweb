@@ -15,8 +15,10 @@ target/
 .settings
 .springBeans
 .sts4-cache
+.codex
 *.sql
 *.md
+!README.md
 
 ### IntelliJ IDEA ###
 .idea

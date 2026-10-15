@@ -126,6 +126,10 @@
             <input th:field="*{price}" type="number" min="0.01" step="0.01" placeholder="29.99" />
           </label>
           <label class="field">
+            <span>Stock Quantity</span>
+            <input th:field="*{stockQty}" type="number" min="0" step="1" placeholder="100" />
+          </label>
+          <label class="field">
             <span>Category</span>
             <select th:field="*{category}">
               <option value="">Select category</option>
