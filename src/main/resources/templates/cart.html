@@ -10,9 +10,12 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/interactions.js" defer></script>
   </head>
   <body class="app-body">
+    <a class="skip-link" href="#main-content">Skip to cart</a>
     <header class="app-header">
       <div class="brand-lockup">
         <div class="brand-mark"></div>
@@ -22,13 +25,13 @@
         </div>
       </div>
 
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="Primary navigation">
         <a href="/catalog">Catalog</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
-        <a class="header-shortcut is-active" href="/cart">
+        <a class="header-shortcut is-active" aria-current="page" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
         </a>
@@ -47,7 +50,7 @@
       </div>
     </header>
 
-    <main class="page-shell">
+    <main id="main-content" class="page-shell">
       <section class="hero-card">
         <div>
           <p class="eyebrow">Cart overview</p>
@@ -86,16 +89,18 @@
                   th:id="'checkout-item-' + ${item.variantId}"
                   th:value="${item.variantId}"
                   checked
-                  aria-label="Select item for checkout"
-                  th:attr="data-quantity=${item.quantity},data-line-total=${item.lineTotal}" />
+                  th:attr="aria-label=${'Select ' + item.productName + (item.sizeLabel != null ? ', ' + item.sizeLabel : '') + (item.colorName != null ? ', ' + item.colorName : '') + ', SKU ' + item.sku + ' for checkout'},data-quantity=${item.quantity},data-line-total=${item.lineTotal}"
+                  />
               </label>
-              <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
-                <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+              <a class="image-frame cart-item-image" th:href="@{/products/{slug}(slug=${item.productSlug})}">
+                <img th:src="${item.imageUrl}" th:alt="${item.productName}" loading="lazy" />
+                <span class="image-fallback">Image unavailable</span>
               </a>
               <div class="cart-item-content">
                 <div>
                   <h2 th:text="${item.productName}">Product Name</h2>
-                  <p class="product-meta cart-unit-price" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+                  <p class="product-meta"><span th:if="${item.sizeLabel != null}" th:text="${'Size: ' + item.sizeLabel}">Size</span><span th:if="${item.colorName != null}" th:text="${' | Color: ' + item.colorName}">Color</span><span th:text="${' | SKU: ' + item.sku}">SKU</span></p>
+                  <p class="product-meta cart-unit-price" th:text="'Unit price: ' + ${#numbers.formatInteger(item.unitPrice, 1, 'COMMA')} + ' VND'">Unit price: 0 VND</p>
                 </div>
 
                 <div class="cart-item-actions">
@@ -128,7 +133,7 @@
               </div>
               <div class="cart-item-total">
                 <span>Line total</span>
-                <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+                <strong th:text="${#numbers.formatInteger(item.lineTotal, 1, 'COMMA')} + ' VND'">0 VND</strong>
               </div>
             </article>
           </div>
@@ -143,9 +148,9 @@
           </div>
           <dl class="info-list">
             <div><dt>Items in cart</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
-            <div><dt>Cart subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Cart subtotal</dt><dd th:text="${#numbers.formatInteger(cartSummary.subtotal, 1, 'COMMA')} + ' VND'">0 VND</dd></div>
             <div><dt>Selected items</dt><dd id="selected-items-count" th:text="${cartSummary.totalQuantity}">0</dd></div>
-            <div><dt>Selected subtotal</dt><dd id="selected-subtotal" th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Selected subtotal</dt><dd id="selected-subtotal" th:text="${#numbers.formatInteger(cartSummary.subtotal, 1, 'COMMA')} + ' VND'">0 VND</dd></div>
           </dl>
           <p class="checkout-note">Use the checkbox on each card item to choose what goes into this checkout. Unchecked items stay in the cart.</p>
           <form id="checkout-selection-form" class="stack-form" method="get" action="/checkout">
@@ -174,8 +179,9 @@
 
         <div th:if="${!#lists.isEmpty(savedProducts)}" class="product-grid saved-cart-grid">
           <article th:each="product : ${savedProducts}" class="product-card">
-            <a th:href="@{/products/{slug}(slug=${product.slug})}">
-              <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+            <a class="image-frame" th:href="@{/products/{slug}(slug=${product.slug})}">
+              <img th:src="${product.imageUrl}" th:alt="${product.name}" loading="lazy" />
+              <span class="image-fallback">Image unavailable</span>
             </a>
             <div class="product-content">
               <p class="product-meta">
@@ -184,19 +190,14 @@
               <h2 class="product-title" th:text="${product.name}">Product Name</h2>
               <p class="lead" th:text="${product.description}">Description</p>
               <div class="product-footer product-actions-row">
-                <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+                <span class="price" th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' VND'">0 VND</span>
                 <div class="product-action-buttons">
-                  <form method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
-                    <input type="hidden" name="redirectTo" value="/cart" />
-                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
-                  </form>
+                  <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">Choose options</a>
                   <form method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
                     <input type="hidden" name="redirectTo" value="/cart" />
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <button class="btn btn-outline-accent btn-product-action" type="submit">Remove</button>
                   </form>
-                  <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
                 </div>
               </div>
             </div>

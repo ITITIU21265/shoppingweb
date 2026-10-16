@@ -2,8 +2,14 @@ package com.web.shoppingweb.service.impl;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,14 +32,23 @@ import com.web.shoppingweb.repository.product.ProductVariantRepository;
 import com.web.shoppingweb.repository.user.UserRepository;
 import com.web.shoppingweb.service.ProductService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 @Service
 @Transactional
 public class ProductServiceImpl implements ProductService {
+
+    private static final int MAX_VARIANTS = 100;
+    private static final BigDecimal MAX_VND_AMOUNT = new BigDecimal("9999999999");
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public ProductServiceImpl(CategoryRepository categoryRepository,
                               ProductRepository productRepository,
@@ -93,6 +108,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product createProduct(ProductFormDTO dto, String sellerUsername) {
+        List<ProductFormDTO.VariantDTO> variants = requireCreateVariants(dto.getVariants());
+        BigDecimal productPrice = validatePrice(dto.getPrice());
+        validateSubmittedVariants(variants);
+        validateDefaultVariantPrice(variants, productPrice);
+
         User seller = userRepository.findByUsername(sellerUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found"));
         ProductCategory category = ProductCategory.fromValue(dto.getCategory());
@@ -103,16 +123,21 @@ public class ProductServiceImpl implements ProductService {
         product.setName(dto.getName().trim());
         product.setTitle(dto.getName().trim());
         product.setDescription(dto.getDescription().trim());
-        product.setPrice(validatePrice(dto.getPrice()));
+        product.setPrice(productPrice);
         product.setImageUrl(dto.getImageUrl().trim());
-        product.setFeatured(dto.isFeatured());
+        product.setFeatured(false);
         product.setActive(true);
         product.setStatus(ProductStatus.ACTIVE);
         product.setCurrency("VND");
         product.setSlug(generateUniqueSlug(dto.getName()));
 
         Product savedProduct = productRepository.save(product);
-        ensureDefaultVariant(savedProduct, normalizeStockQty(dto.getStockQty()));
+        List<ProductVariant> savedVariants = new ArrayList<>(variants.size());
+        for (int index = 0; index < variants.size(); index++) {
+            ProductFormDTO.VariantDTO row = variants.get(index);
+            savedVariants.add(createVariant(savedProduct, row, index + 1, index == 0));
+        }
+        productVariantRepository.saveAll(savedVariants);
         return savedProduct;
     }
 
@@ -123,27 +148,42 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         assertProductOwnerOrAdmin(product, actor);
 
-        boolean priceChanged = product.getPrice() == null
-                || dto.getPrice() == null || product.getPrice().compareTo(dto.getPrice()) != 0;
+        BigDecimal productPrice = validatePrice(dto.getPrice());
+        List<ProductFormDTO.VariantDTO> submittedVariants = dto.getVariants();
+        boolean hasVariantUpdates = submittedVariants != null && !submittedVariants.isEmpty();
+        boolean priceChanged = product.getPrice() == null || product.getPrice().compareTo(productPrice) != 0;
+        List<ProductVariant> existingVariants = List.of();
+        if (submittedVariants != null && submittedVariants.size() > MAX_VARIANTS) {
+            throw new IllegalArgumentException("A product cannot have more than 100 variants.");
+        }
+        if (hasVariantUpdates) {
+            validateSubmittedVariants(submittedVariants);
+            validateDefaultVariantPrice(submittedVariants, productPrice);
+            existingVariants = productVariantRepository.findAllByProduct_IdOrderByIdAsc(productId);
+            validateVariantUpdateOwnershipAndOptions(existingVariants, submittedVariants);
+        } else if (priceChanged) {
+            existingVariants = productVariantRepository.findAllByProduct_IdOrderByIdAsc(productId);
+            if (existingVariants.stream().noneMatch(ProductVariant::isDefault)) {
+                throw new IllegalArgumentException(
+                        "The product has no default variant to receive the updated base price.");
+            }
+        }
+
         ProductCategory category = ProductCategory.fromValue(dto.getCategory());
 
         synchronizeCategory(product, category);
         product.setName(dto.getName().trim());
         product.setTitle(dto.getName().trim());
         product.setDescription(dto.getDescription().trim());
-        product.setPrice(validatePrice(dto.getPrice()));
+        product.setPrice(productPrice);
         product.setImageUrl(dto.getImageUrl().trim());
-        product.setFeatured(dto.isFeatured());
         product.setStatus(ProductStatus.ACTIVE);
         product.setActive(true);
 
-        if (priceChanged) {
-            long priceAmount = product.getPrice().longValueExact();
-            List<ProductVariant> variants = productVariantRepository.findAllByProduct_IdOrderByIdAsc(productId);
-            for (ProductVariant variant : variants) {
-                variant.setPriceAmount(priceAmount);
-            }
-            productVariantRepository.saveAll(variants);
+        if (hasVariantUpdates) {
+            upsertVariants(product, existingVariants, submittedVariants);
+        } else if (priceChanged) {
+            synchronizeDefaultVariantPrice(existingVariants, productPrice);
         }
         return productRepository.save(product);
     }
@@ -184,15 +224,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private BigDecimal validatePrice(BigDecimal price) {
-        if (price == null || price.signum() <= 0) {
-            throw new IllegalArgumentException("Price must be positive.");
-        }
-        try {
-            // VND amounts are stored in whole dong, without a x100 conversion.
-            price.longValueExact();
-        } catch (ArithmeticException ex) {
-            throw new IllegalArgumentException("Price must be a whole VND amount within the supported range.", ex);
-        }
+        validateWholeVndAmount(price, "Price");
         return price;
     }
 
@@ -211,23 +243,212 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found for slug: " + slug));
     }
 
-    private void ensureDefaultVariant(Product product, int stockQty) {
-        if (productVariantRepository.existsByProduct(product)) {
-            return;
-        }
-
+    private ProductVariant createVariant(Product product,
+                                         ProductFormDTO.VariantDTO row,
+                                         int skuOrdinal,
+                                         boolean defaultVariant) {
         ProductVariant variant = new ProductVariant();
         variant.setProduct(product);
-        variant.setSku("P" + product.getId() + "-DEFAULT");
-        variant.setPriceAmount(product.getPrice().longValueExact());
-        variant.setStockQty(stockQty);
-        variant.setDefault(true);
+        variant.setSku(formatSku(product.getId(), skuOrdinal));
+        copyVariantFields(variant, row);
+        variant.setDefault(defaultVariant);
         variant.setStatus(ProductVariantStatus.ACTIVE);
-        productVariantRepository.save(variant);
+        return variant;
     }
 
-    private int normalizeStockQty(Integer stockQty) {
-        return stockQty == null ? 0 : Math.max(stockQty, 0);
+    private List<ProductFormDTO.VariantDTO> requireCreateVariants(List<ProductFormDTO.VariantDTO> variants) {
+        if (variants == null || variants.isEmpty()) {
+            throw new IllegalArgumentException("At least one product variant is required.");
+        }
+        if (variants.size() > MAX_VARIANTS) {
+            throw new IllegalArgumentException("A product cannot have more than 100 variants.");
+        }
+        if (variants.stream().anyMatch(row -> row != null && row.getId() != null)) {
+            throw new IllegalArgumentException("New product variants must not include variant IDs.");
+        }
+        return variants;
+    }
+
+    private void validateSubmittedVariants(List<ProductFormDTO.VariantDTO> variants) {
+        if (variants.size() > MAX_VARIANTS) {
+            throw new IllegalArgumentException("A product cannot have more than 100 variants.");
+        }
+
+        Set<Long> submittedIds = new HashSet<>();
+        Set<VariantOptionKey> submittedOptions = new HashSet<>();
+        Set<Long> sizeIds = new LinkedHashSet<>();
+        Set<Long> colorIds = new LinkedHashSet<>();
+
+        for (int index = 0; index < variants.size(); index++) {
+            ProductFormDTO.VariantDTO row = variants.get(index);
+            int rowNumber = index + 1;
+            if (row == null) {
+                throw new IllegalArgumentException("Variant row " + rowNumber + " is required.");
+            }
+            if (row.getId() != null && (row.getId() <= 0 || !submittedIds.add(row.getId()))) {
+                throw new IllegalArgumentException("Variant row " + rowNumber + " has an invalid or duplicate ID.");
+            }
+            if (row.getSizeId() != null && row.getSizeId() <= 0) {
+                throw new IllegalArgumentException("Variant row " + rowNumber + " has an invalid size ID.");
+            }
+            if (row.getColorId() != null && row.getColorId() <= 0) {
+                throw new IllegalArgumentException("Variant row " + rowNumber + " has an invalid color ID.");
+            }
+            validateWholeVndAmount(row.getPrice(), "Variant row " + rowNumber + " price");
+            if (row.getStockQty() == null || row.getStockQty() < 0) {
+                throw new IllegalArgumentException(
+                        "Variant row " + rowNumber + " stock quantity must be zero or greater.");
+            }
+
+            VariantOptionKey optionKey = new VariantOptionKey(row.getSizeId(), row.getColorId());
+            if (!submittedOptions.add(optionKey)) {
+                throw new IllegalArgumentException("Duplicate size and color combinations are not allowed.");
+            }
+            if (row.getSizeId() != null) {
+                sizeIds.add(row.getSizeId());
+            }
+            if (row.getColorId() != null) {
+                colorIds.add(row.getColorId());
+            }
+        }
+
+        if (!sizeIds.isEmpty()) {
+            validateOptionReferences("sizes", "size", sizeIds);
+        }
+        if (!colorIds.isEmpty()) {
+            validateOptionReferences("colors", "color", colorIds);
+        }
+    }
+
+    private void validateDefaultVariantPrice(List<ProductFormDTO.VariantDTO> variants, BigDecimal productPrice) {
+        if (variants.get(0).getPrice().compareTo(productPrice) != 0) {
+            throw new IllegalArgumentException("The first variant price must match the product price.");
+        }
+    }
+
+    private void validateWholeVndAmount(BigDecimal amount, String fieldName) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be at least 1 VND.");
+        }
+        if (amount.compareTo(MAX_VND_AMOUNT) > 0) {
+            throw new IllegalArgumentException(fieldName + " must contain at most 10 whole-number digits.");
+        }
+        try {
+            amount.longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException(fieldName + " must be a whole VND amount.", ex);
+        }
+    }
+
+    private void validateOptionReferences(String tableName, String optionName, Set<Long> requestedIds) {
+        @SuppressWarnings("unchecked")
+        List<Object> rows = entityManager.createNativeQuery(
+                        "select id from " + tableName + " where id in (:ids)")
+                .setParameter("ids", requestedIds)
+                .getResultList();
+        Set<Long> foundIds = new HashSet<>();
+        for (Object row : rows) {
+            foundIds.add(((Number) row).longValue());
+        }
+        if (!foundIds.containsAll(requestedIds)) {
+            Set<Long> missingIds = new LinkedHashSet<>(requestedIds);
+            missingIds.removeAll(foundIds);
+            throw new IllegalArgumentException("Unknown " + optionName + " ID(s): " + missingIds + ".");
+        }
+    }
+
+    private void validateVariantUpdateOwnershipAndOptions(
+            List<ProductVariant> existingVariants,
+            List<ProductFormDTO.VariantDTO> submittedVariants) {
+        Map<Long, ProductVariant> existingById = new HashMap<>();
+        for (ProductVariant variant : existingVariants) {
+            existingById.put(variant.getId(), variant);
+        }
+
+        Map<Long, ProductFormDTO.VariantDTO> submittedById = new HashMap<>();
+        for (ProductFormDTO.VariantDTO row : submittedVariants) {
+            if (row.getId() != null) {
+                if (!existingById.containsKey(row.getId())) {
+                    throw new IllegalArgumentException(
+                            "Variant ID " + row.getId() + " does not belong to this product.");
+                }
+                submittedById.put(row.getId(), row);
+            }
+        }
+        ProductFormDTO.VariantDTO requestedDefault = submittedVariants.get(0);
+        if (requestedDefault.getId() != null
+                && existingById.get(requestedDefault.getId()).getStatus() != ProductVariantStatus.ACTIVE) {
+            throw new IllegalArgumentException("An inactive variant cannot be selected as the default variant.");
+        }
+
+        Set<VariantOptionKey> finalOptions = new HashSet<>();
+        for (ProductVariant existing : existingVariants) {
+            ProductFormDTO.VariantDTO replacement = submittedById.get(existing.getId());
+            Long sizeId = replacement == null ? existing.getSizeId() : replacement.getSizeId();
+            Long colorId = replacement == null ? existing.getColorId() : replacement.getColorId();
+            if (!finalOptions.add(new VariantOptionKey(sizeId, colorId))) {
+                throw new IllegalArgumentException("Duplicate size and color combinations are not allowed.");
+            }
+        }
+        for (ProductFormDTO.VariantDTO row : submittedVariants) {
+            if (row.getId() == null
+                    && !finalOptions.add(new VariantOptionKey(row.getSizeId(), row.getColorId()))) {
+                throw new IllegalArgumentException("Duplicate size and color combinations are not allowed.");
+            }
+        }
+    }
+
+    private void upsertVariants(Product product,
+                                List<ProductVariant> existingVariants,
+                                List<ProductFormDTO.VariantDTO> submittedVariants) {
+        Map<Long, ProductVariant> existingById = new HashMap<>();
+        Set<String> usedSkus = new HashSet<>();
+        for (ProductVariant variant : existingVariants) {
+            existingById.put(variant.getId(), variant);
+            usedSkus.add(variant.getSku());
+            variant.setDefault(false);
+        }
+
+        List<ProductVariant> variantsToSave = new ArrayList<>(existingVariants);
+        int nextSkuOrdinal = existingVariants.size() + 1;
+        for (int index = 0; index < submittedVariants.size(); index++) {
+            ProductFormDTO.VariantDTO row = submittedVariants.get(index);
+            ProductVariant variant;
+            if (row.getId() == null) {
+                while (usedSkus.contains(formatSku(product.getId(), nextSkuOrdinal))) {
+                    nextSkuOrdinal++;
+                }
+                variant = createVariant(product, row, nextSkuOrdinal++, index == 0);
+                usedSkus.add(variant.getSku());
+                variantsToSave.add(variant);
+            } else {
+                variant = existingById.get(row.getId());
+                copyVariantFields(variant, row);
+                variant.setDefault(index == 0);
+            }
+        }
+        productVariantRepository.saveAll(variantsToSave);
+    }
+
+    private void copyVariantFields(ProductVariant variant, ProductFormDTO.VariantDTO row) {
+        variant.setSizeId(row.getSizeId());
+        variant.setColorId(row.getColorId());
+        variant.setPriceAmount(row.getPrice().longValueExact());
+        variant.setStockQty(row.getStockQty());
+    }
+
+    private void synchronizeDefaultVariantPrice(List<ProductVariant> existingVariants, BigDecimal productPrice) {
+        ProductVariant defaultVariant = existingVariants.stream()
+                .filter(ProductVariant::isDefault)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "The product has no default variant to receive the updated base price."));
+        defaultVariant.setPriceAmount(productPrice.longValueExact());
+        productVariantRepository.saveAll(List.of(defaultVariant));
+    }
+
+    private String formatSku(Long productId, int ordinal) {
+        return "P" + productId + "-V" + String.format(Locale.ROOT, "%03d", ordinal);
     }
 
     private User getUser(String username) {
@@ -250,5 +471,8 @@ public class ProductServiceImpl implements ProductService {
         return user.getRoles() != null
                 && user.getRoles().stream()
                 .anyMatch(role -> roleCode.equalsIgnoreCase(role.getCode()));
+    }
+
+    private record VariantOptionKey(Long sizeId, Long colorId) {
     }
 }

@@ -310,6 +310,17 @@ Important configuration behavior:
 
 ## Running the Application
 
+Build the local Tailwind stylesheet before starting Spring Boot (and after changing utility classes):
+
+```bash
+npm ci --ignore-scripts
+npm run build:css
+```
+
+For frontend development, run `npm run watch:css` in a second terminal. The generated
+`src/main/resources/static/css/tailwind.css` is served locally; pages do not require
+the Tailwind Play CDN. Preflight is disabled to preserve the existing stylesheet.
+
 Create the database before starting the application:
 
 ```sql

@@ -1,5 +1,11 @@
 package com.web.shoppingweb.controller.web;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -7,6 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,10 +41,21 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductRecommendationService recommendationService;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ProductController(ProductService productService, ProductRecommendationService recommendationService) {
+    public ProductController(ProductService productService, ProductRecommendationService recommendationService,
+                             JdbcTemplate jdbcTemplate) {
         this.productService = productService;
         this.recommendationService = recommendationService;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @InitBinder("productForm")
+    void configureProductBinding(WebDataBinder binder) {
+        binder.setAutoGrowCollectionLimit(100);
+        binder.setAllowedFields("name", "description", "price", "category", "imageUrl",
+                "variants[*].id", "variants[*].sizeId", "variants[*].colorId",
+                "variants[*].price", "variants[*].stockQty");
     }
 
     @GetMapping("/catalog")
@@ -93,6 +113,15 @@ public class ProductController {
         if (!model.containsAttribute("productForm")) {
             model.addAttribute("productForm", new ProductFormDTO());
         }
+        ProductFormDTO form = (ProductFormDTO) model.getAttribute("productForm");
+        if (form.getVariants() == null || form.getVariants().isEmpty()) {
+            form.setVariants(new java.util.ArrayList<>());
+            form.getVariants().add(new ProductFormDTO.VariantDTO());
+        }
+        model.addAttribute("variantSizes", jdbcTemplate.queryForList(
+                "SELECT id, label, size_system FROM sizes ORDER BY size_system, id"));
+        model.addAttribute("variantColors", jdbcTemplate.queryForList(
+                "SELECT id, name FROM colors ORDER BY name, id"));
 
         return "catalog";
     }
@@ -101,8 +130,67 @@ public class ProductController {
     public String productDetail(@PathVariable String slug, Model model) {
         Product product = productService.getProductDetail(slug);
         model.addAttribute("product", product);
+        model.addAttribute("productVariants", loadProductVariants(product.getId()));
+        model.addAttribute("productImages", loadProductImages(product));
+        model.addAttribute("productSellerName", resolveSellerName(product));
         model.addAttribute("relatedProducts", recommendationService.getRelatedProducts(product.getId(), 4));
         return "product-detail";
+    }
+
+    private List<Map<String, Object>> loadProductVariants(Long productId) {
+        return jdbcTemplate.query("""
+                SELECT pv.id, pv.sku, pv.size_id, pv.color_id,
+                       s.label AS size_label, s.size_system,
+                       c.name AS color_name, pv.price_amount, pv.stock_qty
+                FROM product_variants pv
+                LEFT JOIN sizes s ON s.id = pv.size_id
+                LEFT JOIN colors c ON c.id = pv.color_id
+                WHERE pv.product_id = ? AND pv.status = 'ACTIVE'
+                ORDER BY pv.is_default DESC, pv.id ASC
+                """, (resultSet, rowNumber) -> {
+            Map<String, Object> variant = new LinkedHashMap<>();
+            variant.put("id", resultSet.getObject("id"));
+            variant.put("sku", resultSet.getString("sku"));
+            variant.put("size_id", resultSet.getObject("size_id"));
+            variant.put("color_id", resultSet.getObject("color_id"));
+            variant.put("size_label", resultSet.getString("size_label"));
+            variant.put("size_system", resultSet.getString("size_system"));
+            variant.put("color_name", resultSet.getString("color_name"));
+            variant.put("price_amount", resultSet.getObject("price_amount"));
+            variant.put("stock_qty", resultSet.getObject("stock_qty"));
+            return variant;
+        }, productId);
+    }
+
+    private List<String> loadProductImages(Product product) {
+        LinkedHashSet<String> images = new LinkedHashSet<>();
+        addImage(images, product.getImageUrl());
+        jdbcTemplate.queryForList("""
+                        SELECT image_url
+                        FROM product_images
+                        WHERE product_id = ?
+                        ORDER BY sort_order ASC, id ASC
+                        """, String.class, product.getId())
+                .forEach(image -> addImage(images, image));
+        return new ArrayList<>(images);
+    }
+
+    private void addImage(LinkedHashSet<String> images, String imageUrl) {
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            images.add(imageUrl);
+        }
+    }
+
+    private String resolveSellerName(Product product) {
+        if (product.getSeller() == null) {
+            return null;
+        }
+        String fullName = product.getSeller().getFullName();
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+        String username = product.getSeller().getUsername();
+        return username == null || username.isBlank() ? null : username;
     }
 
     @PostMapping("/products")

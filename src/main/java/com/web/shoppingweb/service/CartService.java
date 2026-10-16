@@ -12,6 +12,8 @@ public interface CartService {
 
     CartSummaryDTO addProduct(String username, Long productId, int quantity);
 
+    CartSummaryDTO addVariant(String username, Long productId, Long variantId, int quantity);
+
     CartSummaryDTO updateQuantity(String username, Long variantId, int quantity);
 
     CartSummaryDTO removeItem(String username, Long variantId);

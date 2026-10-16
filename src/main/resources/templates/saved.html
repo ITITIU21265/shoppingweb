@@ -10,9 +10,12 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/interactions.js" defer></script>
   </head>
   <body class="app-body">
+    <a class="skip-link" href="#main-content">Skip to saved items</a>
     <header class="app-header">
       <div class="brand-lockup">
         <div class="brand-mark"></div>
@@ -22,7 +25,7 @@
         </div>
       </div>
 
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="Primary navigation">
         <a href="/catalog">Catalog</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
@@ -47,7 +50,7 @@
       </div>
     </header>
 
-    <main class="page-shell">
+    <main id="main-content" class="page-shell">
       <section class="hero-card">
         <div>
           <p class="eyebrow">Wishlist</p>
@@ -71,8 +74,9 @@
 
       <section th:if="${!#lists.isEmpty(savedProducts)}" class="product-grid">
         <article th:each="product : ${savedProducts}" class="product-card">
-          <a th:href="@{/products/{slug}(slug=${product.slug})}">
-            <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+          <a class="image-frame" th:href="@{/products/{slug}(slug=${product.slug})}">
+            <img th:src="${product.imageUrl}" th:alt="${product.name}" loading="lazy" />
+            <span class="image-fallback">Image unavailable</span>
           </a>
           <div class="product-content">
             <p class="product-meta">
@@ -81,19 +85,14 @@
             <h2 class="product-title" th:text="${product.name}">Product Name</h2>
             <p class="lead" th:text="${product.description}">Description</p>
             <div class="product-footer product-actions-row">
-              <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+              <span class="price" th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' VND'">0 VND</span>
               <div class="product-action-buttons">
-                <form method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
-                  <input type="hidden" name="redirectTo" value="/saved" />
-                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                  <button class="btn btn-primary btn-product-action" type="submit">Add to Cart</button>
-                </form>
+                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">Choose options</a>
                 <form method="post" th:action="@{/saved/{productId}/toggle(productId=${product.id})}">
                   <input type="hidden" name="redirectTo" value="/saved" />
                   <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                   <button class="btn btn-outline-accent btn-product-action" type="submit">Remove</button>
                 </form>
-                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
               </div>
             </div>
           </div>

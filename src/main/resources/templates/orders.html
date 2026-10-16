@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body class="app-body">
@@ -88,7 +89,7 @@
             </div>
             <div>
               <span>Subtotal</span>
-              <strong th:text="'$' + ${#numbers.formatDecimal(order.subtotal, 1, 2)}">$0.00</strong>
+              <strong th:text="${#numbers.formatInteger(order.subtotal, 1, 'COMMA')} + ' VND'">0 VND</strong>
             </div>
           </div>
 

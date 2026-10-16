@@ -10,12 +10,14 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <script src="/js/interactions.js" defer></script>
   </head>
   <body class="app-body">
+    <a class="skip-link" href="#main-content">Skip to catalog</a>
     <header class="app-header">
       <div class="brand-lockup">
         <div class="brand-mark"></div>
@@ -25,8 +27,8 @@
         </div>
       </div>
 
-      <nav class="main-nav">
-        <a class="is-active" href="/catalog">Catalog</a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a class="is-active" aria-current="page" href="/catalog">Catalog</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
         <a th:if="${currentUser != null and currentUser.role == 'ADMIN'}" href="/admin/users">Admin Users</a>
       </nav>
@@ -52,7 +54,7 @@
       </div>
     </header>
 
-    <main class="page-shell">
+    <main id="main-content" class="page-shell">
       <section class="hero-card">
         <div>
           <p class="eyebrow">Season spotlight</p>
@@ -116,40 +118,144 @@
           </div>
         </div>
 
-        <form class="two-column-form" method="post" th:object="${productForm}" action="/products">
-          <label class="field">
+        <form class="two-column-form product-form" method="post" th:object="${productForm}" action="/products" data-product-form>
+          <label class="field" for="name">
             <span>Product Name</span>
-            <input th:field="*{name}" type="text" placeholder="Classic White T-Shirt" />
+            <input th:field="*{name}" type="text" required maxlength="140" placeholder="Classic White T-Shirt"
+                   th:aria-invalid="${#fields.hasErrors('name')}" aria-describedby="name-error" />
+            <small id="name-error" class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></small>
           </label>
-          <label class="field">
-            <span>Price</span>
-            <input th:field="*{price}" type="number" min="0.01" step="0.01" placeholder="29.99" />
+          <label class="field" for="price">
+            <span>Base price (first variant)</span>
+            <input th:field="*{price}" type="number" required min="1" max="9999999999" step="1" inputmode="numeric" placeholder="299000"
+                   th:aria-invalid="${#fields.hasErrors('price')}" aria-describedby="price-help price-error" data-base-price />
+            <small id="price-help" class="field-help">Whole VND amount. This stays synchronized with the first variant price.</small>
+            <small id="price-error" class="field-error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></small>
           </label>
-          <label class="field">
-            <span>Stock Quantity</span>
-            <input th:field="*{stockQty}" type="number" min="0" step="1" placeholder="100" />
-          </label>
-          <label class="field">
+          <label class="field" for="category">
             <span>Category</span>
-            <select th:field="*{category}">
+            <select th:field="*{category}" required th:aria-invalid="${#fields.hasErrors('category')}" aria-describedby="category-error">
               <option value="">Select category</option>
               <option th:each="category : ${categories}" th:value="${category.name()}" th:text="${category.displayName}"></option>
             </select>
+            <small id="category-error" class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></small>
           </label>
-          <label class="field">
+          <label class="field" for="imageUrl">
             <span>Image URL</span>
-            <input th:field="*{imageUrl}" type="url" placeholder="https://example.com/image.jpg" />
+            <input th:field="*{imageUrl}" type="url" required maxlength="500" placeholder="https://example.com/image.jpg"
+                   th:aria-invalid="${#fields.hasErrors('imageUrl')}" aria-describedby="imageUrl-error" />
+            <small id="imageUrl-error" class="field-error" th:if="${#fields.hasErrors('imageUrl')}" th:errors="*{imageUrl}"></small>
           </label>
-          <label class="field" style="grid-column: 1 / -1;">
+          <label class="field form-field-wide" for="description">
             <span>Description</span>
-            <input th:field="*{description}" type="text" placeholder="Describe the product briefly" />
+            <textarea th:field="*{description}" required maxlength="500" rows="4"
+                      placeholder="Material, style, pattern, fit, and care instructions..."
+                      th:aria-invalid="${#fields.hasErrors('description')}" aria-describedby="description-help description-error"></textarea>
+            <small id="description-help" class="field-help">Up to 500 characters. Include material, style, pattern, fit, and care details.</small>
+            <small id="description-error" class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></small>
           </label>
-          <label class="field" style="grid-column: 1 / -1;">
-            <span>
-              <input th:field="*{featured}" type="checkbox" style="width:auto; margin-right:8px;" />
-              Featured Product
-            </span>
-          </label>
+
+          <fieldset class="variant-editor form-field-wide" aria-describedby="variants-help variants-error">
+            <legend>Variants</legend>
+            <div class="variant-editor-header">
+              <p id="variants-help" class="field-help">Add each sellable size and color combination. Size and color may remain None for truly one-size accessories.</p>
+              <button class="btn btn-ghost" type="button" data-add-variant>Add variant</button>
+            </div>
+            <small id="variants-error" class="field-error" th:if="${#fields.hasErrors('variants')}" th:errors="*{variants}"></small>
+
+            <div class="variant-list" data-variant-list aria-live="polite">
+              <section class="variant-row" th:each="variant, variantStat : *{variants}" th:attr="data-variant-index=${variantStat.index}">
+                <div class="variant-row-header">
+                  <h3 data-variant-title th:text="${variantStat.index == 0 ? 'Default SKU' : 'Variant ' + (variantStat.index + 1)}">Default SKU</h3>
+                  <button class="btn btn-ghost variant-remove" type="button" data-remove-variant
+                          th:aria-label="${'Remove variant ' + (variantStat.index + 1)}">Remove</button>
+                </div>
+                <input th:field="*{variants[__${variantStat.index}__].id}" type="hidden" data-variant-field="id" />
+                <div class="variant-fields">
+                  <label class="field" th:for="${'variants' + variantStat.index + '.sizeId'}">
+                    <span>Size</span>
+                    <select th:field="*{variants[__${variantStat.index}__].sizeId}" data-variant-field="sizeId"
+                            th:aria-invalid="${#fields.hasErrors('variants[' + variantStat.index + '].sizeId')}"
+                            th:aria-describedby="${'variant-' + variantStat.index + '-sizeId-error'}">
+                      <option value="">None</option>
+                      <option th:each="size : ${variantSizes}" th:value="${size['id']}"
+                              th:text="${size['label'] + (size['size_system'] != null ? ' (' + size['size_system'] + ')' : '')}"></option>
+                    </select>
+                    <small class="field-error" data-variant-error="sizeId" th:id="${'variant-' + variantStat.index + '-sizeId-error'}"
+                           th:if="${#fields.hasErrors('variants[' + variantStat.index + '].sizeId')}"
+                           th:errors="*{variants[__${variantStat.index}__].sizeId}"></small>
+                  </label>
+                  <label class="field" th:for="${'variants' + variantStat.index + '.colorId'}">
+                    <span>Color</span>
+                    <select th:field="*{variants[__${variantStat.index}__].colorId}" data-variant-field="colorId"
+                            th:aria-invalid="${#fields.hasErrors('variants[' + variantStat.index + '].colorId')}"
+                            th:aria-describedby="${'variant-' + variantStat.index + '-colorId-error'}">
+                      <option value="">None</option>
+                      <option th:each="color : ${variantColors}" th:value="${color['id']}" th:text="${color['name']}"></option>
+                    </select>
+                    <small class="field-error" data-variant-error="colorId" th:id="${'variant-' + variantStat.index + '-colorId-error'}"
+                           th:if="${#fields.hasErrors('variants[' + variantStat.index + '].colorId')}"
+                           th:errors="*{variants[__${variantStat.index}__].colorId}"></small>
+                  </label>
+                  <label class="field" th:for="${'variants' + variantStat.index + '.price'}">
+                    <span>Price (VND)</span>
+                    <input th:field="*{variants[__${variantStat.index}__].price}" type="number" required min="1" max="9999999999" step="1" inputmode="numeric"
+                           data-variant-field="price"
+                           th:aria-invalid="${#fields.hasErrors('variants[' + variantStat.index + '].price')}"
+                           th:aria-describedby="${'variant-' + variantStat.index + '-price-error'}" />
+                    <small class="field-error" data-variant-error="price" th:id="${'variant-' + variantStat.index + '-price-error'}"
+                           th:if="${#fields.hasErrors('variants[' + variantStat.index + '].price')}"
+                           th:errors="*{variants[__${variantStat.index}__].price}"></small>
+                  </label>
+                  <label class="field" th:for="${'variants' + variantStat.index + '.stockQty'}">
+                    <span>Stock quantity</span>
+                    <input th:field="*{variants[__${variantStat.index}__].stockQty}" type="number" required min="0" step="1" inputmode="numeric"
+                           data-variant-field="stockQty"
+                           th:aria-invalid="${#fields.hasErrors('variants[' + variantStat.index + '].stockQty')}"
+                           th:aria-describedby="${'variant-' + variantStat.index + '-stockQty-error'}" />
+                    <small class="field-error" data-variant-error="stockQty" th:id="${'variant-' + variantStat.index + '-stockQty-error'}"
+                           th:if="${#fields.hasErrors('variants[' + variantStat.index + '].stockQty')}"
+                           th:errors="*{variants[__${variantStat.index}__].stockQty}"></small>
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <template data-variant-template>
+              <section class="variant-row" data-variant-index="">
+                <div class="variant-row-header">
+                  <h3 data-variant-title>Variant</h3>
+                  <button class="btn btn-ghost variant-remove" type="button" data-remove-variant>Remove</button>
+                </div>
+                <input type="hidden" data-variant-field="id" />
+                <div class="variant-fields">
+                  <label class="field">
+                    <span>Size</span>
+                    <select data-variant-field="sizeId">
+                      <option value="">None</option>
+                      <option th:each="size : ${variantSizes}" th:value="${size['id']}"
+                              th:text="${size['label'] + (size['size_system'] != null ? ' (' + size['size_system'] + ')' : '')}"></option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Color</span>
+                    <select data-variant-field="colorId">
+                      <option value="">None</option>
+                      <option th:each="color : ${variantColors}" th:value="${color['id']}" th:text="${color['name']}"></option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Price (VND)</span>
+                    <input type="number" required min="1" max="9999999999" step="1" inputmode="numeric" data-variant-field="price" />
+                  </label>
+                  <label class="field">
+                    <span>Stock quantity</span>
+                    <input type="number" required min="0" step="1" inputmode="numeric" value="0" data-variant-field="stockQty" />
+                  </label>
+                </div>
+              </section>
+            </template>
+          </fieldset>
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
           <div class="form-footer">
             <button class="btn btn-primary" type="submit">Create Product</button>
@@ -160,8 +266,9 @@
       <section th:if="${!#lists.isEmpty(products)}" class="product-grid">
         <article th:each="product : ${products}" class="product-card">
           <div class="product-card-media">
-            <a th:href="@{/products/{slug}(slug=${product.slug})}">
-              <img th:src="${product.imageUrl}" th:alt="${product.name}" />
+            <a class="image-frame" th:href="@{/products/{slug}(slug=${product.slug})}">
+              <img th:src="${product.imageUrl}" th:alt="${product.name}" loading="lazy" />
+              <span class="image-fallback">Image unavailable</span>
             </a>
             <button th:if="${signedIn}"
                     class="product-save-chip"
@@ -171,6 +278,7 @@
                     th:data-product-id="${product.id}"
                     data-save-text="Save"
                     data-saved-text="Saved"
+                    th:attr="aria-pressed=${savedProductIds.contains(product.id)}"
                     th:text="${savedProductIds.contains(product.id)} ? 'Saved' : 'Save'">
               Save
             </button>
@@ -184,17 +292,9 @@
             <h2 class="product-title" th:text="${product.name}">Product Name</h2>
             <p class="lead" th:text="${product.description}">Description</p>
             <div class="product-footer product-actions-row">
-              <span class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</span>
+              <span class="price" th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' VND'">0 VND</span>
               <div class="product-action-buttons">
-                <button th:if="${signedIn}"
-                        class="btn btn-primary btn-product-action"
-                        type="button"
-                        data-action="add-to-cart"
-                        th:data-product-id="${product.id}">
-                  Add to Cart
-                </button>
-                <a th:if="${!signedIn}" class="btn btn-primary btn-product-action" href="/auth/login">Add to Cart</a>
-                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">View Details</a>
+                <a class="btn btn-primary btn-product-action" th:href="@{/products/{slug}(slug=${product.slug})}">Choose options</a>
               </div>
             </div>
           </div>
@@ -259,5 +359,6 @@
         </div>
       </nav>
     </main>
+    <div class="toast-region" data-toast-region aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

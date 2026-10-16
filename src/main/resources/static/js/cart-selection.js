@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount) => `${Math.round(amount).toLocaleString("en-US")} VND`;
 
   const updateSummary = () => {
     const selected = checkboxes.filter((checkbox) => checkbox.checked);

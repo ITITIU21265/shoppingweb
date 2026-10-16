@@ -10,9 +10,12 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/interactions.js" defer></script>
   </head>
   <body class="app-body">
+    <a class="skip-link" href="#main-content">Skip to checkout</a>
     <header class="app-header">
       <div class="brand-lockup">
         <div class="brand-mark"></div>
@@ -22,13 +25,13 @@
         </div>
       </div>
 
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="Primary navigation">
         <a href="/catalog">Catalog</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
 
       <div class="header-user">
-        <a class="header-shortcut is-active" href="/cart">
+        <a class="header-shortcut is-active" aria-current="page" href="/cart">
           <span>Cart</span>
           <strong th:text="${cartItemCount}">0</strong>
         </a>
@@ -47,7 +50,7 @@
       </div>
     </header>
 
-    <main class="page-shell">
+    <main id="main-content" class="page-shell">
       <section class="hero-card">
         <div>
           <p class="eyebrow">Checkout</p>
@@ -72,17 +75,24 @@
               </div>
             </div>
 
+            <div th:object="${checkoutForm}">
+              <div th:if="${#fields.hasErrors('selectedVariantIds')}" class="form-alert order-review-alert" role="alert" th:errors="*{selectedVariantIds}">Review the selected items.</div>
+            </div>
+
             <div class="checkout-item-list">
               <article th:each="item : ${cartSummary.items}" class="checkout-item-card">
-                <a th:href="@{/products/{slug}(slug=${item.productSlug})}">
-                  <img th:src="${item.imageUrl}" th:alt="${item.productName}" />
+                <a class="image-frame checkout-item-image" th:href="@{/products/{slug}(slug=${item.productSlug})}">
+                  <img th:src="${item.imageUrl}" th:alt="${item.productName}" loading="lazy" />
+                  <span class="image-fallback">Image unavailable</span>
                 </a>
                 <div class="checkout-item-copy">
                   <h3 th:text="${item.productName}">Product Name</h3>
+                  <p class="product-meta"><span th:if="${item.sizeLabel != null}" th:text="${'Size: ' + item.sizeLabel}">Size</span><span th:if="${item.colorName != null}" th:text="${' | Color: ' + item.colorName}">Color</span><span th:text="${' | SKU: ' + item.sku}">SKU</span></p>
+                  <p class="product-meta" th:if="${item.sellerName != null}" th:text="${'Sold by ' + item.sellerName}">Sold by Seller</p>
                   <p class="product-meta" th:text="'Quantity: ' + ${item.quantity}">Quantity: 1</p>
-                  <p class="product-meta" th:text="'Unit price: $' + ${#numbers.formatDecimal(item.unitPrice, 1, 2)}">$0.00</p>
+                  <p class="product-meta" th:text="'Unit price: ' + ${#numbers.formatInteger(item.unitPrice, 1, 'COMMA')} + ' VND'">Unit price: 0 VND</p>
                 </div>
-                <strong th:text="'$' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">$0.00</strong>
+                <strong th:text="${#numbers.formatInteger(item.lineTotal, 1, 'COMMA')} + ' VND'">0 VND</strong>
               </article>
             </div>
           </section>
@@ -105,11 +115,10 @@
                 <span>Email</span>
                 <input type="email" th:value="${currentUser.email}" readonly />
               </label>
-              <label class="field checkout-address-field">
+              <label class="field checkout-address-field" for="shippingAddress">
                 <span>Shipping address</span>
-                <textarea th:field="*{shippingAddress}" rows="6" placeholder="Apartment, street, ward, district, city"></textarea>
-                <small th:if="${#fields.hasErrors('selectedVariantIds')}" class="field-error" th:errors="*{selectedVariantIds}"></small>
-                <small th:if="${#fields.hasErrors('shippingAddress')}" class="field-error" th:errors="*{shippingAddress}"></small>
+                <textarea th:field="*{shippingAddress}" rows="6" required placeholder="Apartment, street, ward, district, city" th:aria-invalid="${#fields.hasErrors('shippingAddress')}" aria-describedby="shipping-address-error"></textarea>
+                <small id="shipping-address-error" th:if="${#fields.hasErrors('shippingAddress')}" class="field-error" th:errors="*{shippingAddress}"></small>
               </label>
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
               <div class="checkout-actions">
@@ -130,7 +139,7 @@
 
           <dl class="info-list">
             <div><dt>Items</dt><dd th:text="${cartSummary.totalQuantity}">0</dd></div>
-            <div><dt>Subtotal</dt><dd th:text="'$' + ${#numbers.formatDecimal(cartSummary.subtotal, 1, 2)}">$0.00</dd></div>
+            <div><dt>Subtotal</dt><dd th:text="${#numbers.formatInteger(cartSummary.subtotal, 1, 'COMMA')} + ' VND'">0 VND</dd></div>
             <div><dt>Status after submit</dt><dd>Confirmed</dd></div>
           </dl>
 

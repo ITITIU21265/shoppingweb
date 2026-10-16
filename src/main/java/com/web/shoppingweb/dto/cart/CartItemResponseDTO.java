@@ -10,6 +10,9 @@ public class CartItemResponseDTO {
     private String productSlug;
     private String imageUrl;
     private String sellerName;
+    private String sku;
+    private String sizeLabel;
+    private String colorName;
     private int quantity;
     private BigDecimal unitPrice;
     private BigDecimal lineTotal;
@@ -35,6 +38,25 @@ public class CartItemResponseDTO {
         this.quantity = quantity;
         this.unitPrice = unitPrice;
         this.lineTotal = lineTotal;
+    }
+
+    public CartItemResponseDTO(Long variantId,
+                               Long productId,
+                               String productName,
+                               String productSlug,
+                               String imageUrl,
+                               String sellerName,
+                               String sku,
+                               String sizeLabel,
+                               String colorName,
+                               int quantity,
+                               BigDecimal unitPrice,
+                               BigDecimal lineTotal) {
+        this(variantId, productId, productName, productSlug, imageUrl, sellerName,
+                quantity, unitPrice, lineTotal);
+        this.sku = sku;
+        this.sizeLabel = sizeLabel;
+        this.colorName = colorName;
     }
 
     public Long getVariantId() {
@@ -83,6 +105,30 @@ public class CartItemResponseDTO {
 
     public void setSellerName(String sellerName) {
         this.sellerName = sellerName;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public String getSizeLabel() {
+        return sizeLabel;
+    }
+
+    public void setSizeLabel(String sizeLabel) {
+        this.sizeLabel = sizeLabel;
+    }
+
+    public String getColorName() {
+        return colorName;
+    }
+
+    public void setColorName(String colorName) {
+        this.colorName = colorName;
     }
 
     public int getQuantity() {

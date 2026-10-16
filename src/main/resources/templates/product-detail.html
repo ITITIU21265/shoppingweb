@@ -6,124 +6,98 @@
     <title th:text="${product.name} + ' | StyleHub'">StyleHub Product</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
     <script src="/js/interactions.js" defer></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        corePlugins: {
-          preflight: false
-        }
-      };
-    </script>
   </head>
   <body class="app-body">
+    <a class="skip-link" href="#main-content">Skip to product details</a>
     <header class="app-header">
       <div class="brand-lockup">
-        <div class="brand-mark"></div>
-        <div>
-          <a class="brand-name" href="/catalog">StyleHub</a>
-          <p class="brand-subtitle">Product Detail</p>
-        </div>
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div><a class="brand-name" href="/catalog">StyleHub</a><p class="brand-subtitle">Product Detail</p></div>
       </div>
-
-      <nav class="main-nav">
-        <a class="is-active" href="/catalog">Catalog</a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a class="is-active" aria-current="page" href="/catalog">Catalog</a>
         <a th:if="${hasDashboardAccess}" th:href="${dashboardUrl}">Dashboard</a>
       </nav>
-
       <div class="header-user">
-        <a th:if="${signedIn}" class="header-shortcut" href="/cart">
-          <span>Cart</span>
-          <strong th:text="${cartItemCount}">0</strong>
-        </a>
+        <a th:if="${signedIn}" class="header-shortcut" href="/cart" aria-label="Shopping cart"><span>Cart</span><strong th:text="${cartItemCount}">0</strong></a>
         <a th:if="${!signedIn}" class="btn btn-primary" href="/auth/login">Sign In</a>
         <details th:if="${signedIn}" class="user-menu">
-          <summary class="user-chip" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</summary>
+          <summary class="user-chip" aria-label="Open account menu" th:text="${#strings.substring(currentUser.fullName ?: currentUser.username, 0, 1)}">U</summary>
           <div class="user-menu-panel">
-            <a href="/profile">My Account</a>
-            <a href="/orders">Orders</a>
+            <a href="/profile">My Account</a><a href="/orders">Orders</a>
             <a th:if="${currentUser != null and currentUser.role == 'CUSTOMER'}" href="/supplier/register">Register as a Seller</a>
-            <form method="post" action="/auth/logout">
-              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-              <button type="submit">Sign Out</button>
-            </form>
+            <form method="post" action="/auth/logout"><input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" /><button type="submit">Sign Out</button></form>
           </div>
         </details>
       </div>
     </header>
 
-    <main class="page-shell">
-      <a class="text-link" href="/catalog">Back to catalog</a>
-      <section class="panel-card" style="display:grid; grid-template-columns: minmax(320px, 460px) 1fr; gap:24px;">
-        <img th:src="${product.imageUrl}" th:alt="${product.name}" style="width:100%; border-radius:24px; object-fit:cover; aspect-ratio:4 / 5;" />
-        <div style="display:grid; gap:18px; align-content:start;">
-          <p class="eyebrow" th:text="${product.category.displayName}">Category</p>
-          <h1 th:text="${product.name}">Product Name</h1>
-          <p class="price" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</p>
-          <p class="lead" th:text="${product.description}">Description</p>
-          <div class="detail-actions">
-            <button th:if="${signedIn}"
-                    class="btn btn-ghost"
-                    type="button"
-                    data-action="save"
-                    th:data-product-id="${product.id}"
-                    data-save-text="Save ❤"
-                    data-saved-text="Saved ❤"
-                    th:text="${savedProductIds.contains(product.id)} ? 'Saved ❤' : 'Save ❤'">
-              Save ❤
+    <main id="main-content" class="page-shell product-detail-page">
+      <a class="text-link product-back-link" href="/catalog">Back to catalog</a>
+      <section class="product-detail-shell" aria-labelledby="product-title">
+        <div class="product-gallery" data-product-gallery>
+          <div class="product-gallery-main image-frame">
+            <img th:if="${productImages != null and !#lists.isEmpty(productImages)}" data-gallery-main th:src="${productImages[0]}" th:alt="${product.name}" width="720" height="900" fetchpriority="high" />
+            <span class="image-fallback" th:classappend="${productImages != null and !#lists.isEmpty(productImages)} ? '' : ' is-visible'">Image unavailable</span>
+          </div>
+          <div th:if="${productImages != null and #lists.size(productImages) > 1}" class="product-thumbnails" aria-label="Product images">
+            <button th:each="image, imageStat : ${productImages}" class="product-thumbnail" th:classappend="${imageStat.first} ? ' is-active'" type="button" th:attr="data-gallery-src=${image},aria-label=${'Show image ' + (imageStat.index + 1) + ' of ' + #lists.size(productImages)},aria-pressed=${imageStat.first}">
+              <span class="image-frame"><img th:src="${image}" alt="" width="112" height="140" loading="lazy" /><span class="image-fallback">Unavailable</span></span>
             </button>
-            <a th:if="${!signedIn}" class="btn btn-ghost" href="/auth/login">Save ❤</a>
+          </div>
+        </div>
 
-            <button th:if="${signedIn}"
-                    class="btn btn-primary"
-                    type="button"
-                    data-action="add-to-cart"
-                    th:data-product-id="${product.id}">
-              Add to Cart
-            </button>
-            <a th:if="${!signedIn}" class="btn btn-primary" href="/auth/login">Add to Cart</a>
+        <div class="product-purchase-panel">
+          <div class="product-heading">
+            <p class="eyebrow" th:text="${product.category.displayName}">Category</p>
+            <h1 id="product-title" th:text="${product.name}">Product Name</h1>
+            <p class="product-seller">Sold by <strong th:text="${productSellerName}">Seller</strong></p>
           </div>
-          <div class="hero-badge">
-            <span>Catalog slug</span>
-            <strong th:text="${product.slug}">product-slug</strong>
-          </div>
+          <p class="price product-live-price" data-variant-price th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' VND'">0 VND</p>
+          <p class="lead" th:text="${product.description}">Description</p>
+
+          <form class="purchase-form" data-purchase-form method="post" th:action="@{/cart/items/{productId}(productId=${product.id})}">
+            <label class="field" for="variantId"><span>Size / color</span>
+              <select id="variantId" name="variantId" required th:disabled="${productVariants == null or #lists.isEmpty(productVariants)}" aria-describedby="variant-help variant-status">
+                <option value="" selected>Select an option</option>
+                <option th:each="variant : ${productVariants}" th:value="${variant['id']}" th:disabled="${variant['stock_qty'] <= 0}" th:attr="data-price=${variant['price_amount']},data-stock=${variant['stock_qty']},data-sku=${variant['sku']}" th:text="${(variant['size_label'] != null ? variant['size_label'] + (variant['size_system'] != null ? ' (' + variant['size_system'] + ')' : '') + (variant['color_name'] != null ? ' / ' + variant['color_name'] : '') : (variant['color_name'] != null ? variant['color_name'] : 'SKU ' + variant['sku'])) + ' - ' + #numbers.formatInteger(variant['price_amount'], 1, 'COMMA') + ' VND' + (variant['stock_qty'] > 0 ? '' : ' - Out of stock')}">Size / color - 0 VND</option>
+              </select>
+            </label>
+            <p id="variant-help" class="field-help">Choose the exact combination you want. Availability is shown for each option.</p>
+            <p id="variant-status" class="variant-status" data-variant-status aria-live="polite" th:text="${productVariants == null or #lists.isEmpty(productVariants)} ? 'This product currently has no available options.' : 'Select an option to see availability.'">Select an option to see availability.</p>
+            <label class="field quantity-field" for="quantity"><span>Quantity</span><input id="quantity" name="quantity" type="number" min="1" step="1" value="1" inputmode="numeric" disabled /></label>
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="purchase-actions">
+              <button th:if="${signedIn and productVariants != null and !#lists.isEmpty(productVariants)}" class="btn btn-primary purchase-submit" type="submit" disabled><span data-button-label>Add to cart</span><span class="button-spinner" aria-hidden="true"></span></button>
+              <a th:if="${!signedIn and productVariants != null and !#lists.isEmpty(productVariants)}" class="btn btn-primary" href="/auth/login">Sign in to add to cart</a>
+              <button th:if="${signedIn}" class="btn btn-ghost" type="button" data-action="save" th:data-product-id="${product.id}" data-save-text="Save" data-saved-text="Saved" th:classappend="${savedProductIds.contains(product.id)} ? ' is-saved'" th:attr="aria-pressed=${savedProductIds.contains(product.id)}" th:text="${savedProductIds.contains(product.id)} ? 'Saved' : 'Save'">Save</button>
+              <a th:if="${!signedIn}" class="btn btn-ghost" href="/auth/login">Sign in to save</a>
+            </div>
+            <p class="purchase-error" data-purchase-error role="status" hidden></p>
+          </form>
+
+          <details class="size-guide"><summary>Size information</summary>
+            <p>Available labels: <span th:each="variant, variantStat : ${productVariants}" th:if="${variant['size_label'] != null}" th:text="${variant['size_label'] + (variant['size_system'] != null ? ' (' + variant['size_system'] + ')' : '') + (!variantStat.last ? ', ' : '')}">M</span></p>
+            <p>A measurement chart is not available for this item. Size labels may vary by brand; check measurements with the seller.</p>
+          </details>
         </div>
       </section>
 
-      <div th:if="${relatedProducts != null and !relatedProducts.isEmpty()}">
-        <section class="mt-16 border-t border-gray-200 pt-10">
-          <div class="mb-6 flex items-center justify-between gap-4">
-            <h2 class="text-2xl font-bold text-gray-900">You Might Also Like</h2>
-            <p class="text-sm italic text-gray-500">✨ Recommended by StyleHub AI</p>
-          </div>
-
-          <div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            <article class="group" th:each="related : ${relatedProducts}">
-              <a th:href="@{'/products/' + ${related.slug}}" class="block overflow-hidden rounded-lg bg-gray-100">
-                <img
-                  th:src="${related.imageUrl != null ? related.imageUrl : '/images/placeholder.jpg'}"
-                  th:alt="${related.name}"
-                  class="aspect-square w-full object-cover transition-opacity duration-200 group-hover:opacity-75"
-                />
-              </a>
-              <div class="mt-4 flex justify-between gap-4">
-                <div>
-                  <h3 class="text-sm text-gray-700" th:text="${related.name}">Product Name</h3>
-                  <p class="mt-1 text-sm text-gray-500" th:text="${related.category}">Category</p>
-                </div>
-                <p class="text-sm font-medium text-gray-900" th:text="${related.price} + ' ' + ${related.currency}">$0.00</p>
-              </div>
-            </article>
-          </div>
-        </section>
-      </div>
+      <section th:if="${relatedProducts != null and !relatedProducts.isEmpty()}" class="related-products" aria-labelledby="related-title">
+        <div class="related-heading"><h2 id="related-title">You might also like</h2><div class="carousel-controls" aria-label="Related product controls"><button class="btn btn-ghost" type="button" data-carousel-previous aria-label="Previous related products">Previous</button><button class="btn btn-ghost" type="button" data-carousel-next aria-label="Next related products">Next</button></div></div>
+        <div class="related-track" data-carousel-track tabindex="0" aria-label="Related products">
+          <article class="related-card" th:each="related : ${relatedProducts}">
+            <a th:href="@{'/products/' + ${related.slug}}"><span class="image-frame related-image"><img th:if="${related.imageUrl != null and !#strings.isEmpty(related.imageUrl)}" th:src="${related.imageUrl}" th:alt="${related.name}" width="360" height="450" loading="lazy" /><span class="image-fallback" th:classappend="${related.imageUrl != null and !#strings.isEmpty(related.imageUrl)} ? '' : ' is-visible'">Image unavailable</span></span><span class="related-copy"><span class="related-name" th:text="${related.name}">Product Name</span><span class="product-meta" th:text="${related.category}">Category</span><strong th:text="${#numbers.formatInteger(related.price, 1, 'COMMA')} + ' VND'">0 VND</strong></span></a>
+          </article>
+        </div>
+      </section>
     </main>
+    <div class="toast-region" data-toast-region aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

@@ -23,6 +23,15 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
 
     Optional<ProductVariant> findByProductAndIsDefaultTrue(Product product);
 
+    @Query(value = """
+            select pv.id, s.label, c.name
+            from product_variants pv
+            left join sizes s on s.id = pv.size_id
+            left join colors c on c.id = pv.color_id
+            where pv.id in (:ids)
+            """, nativeQuery = true)
+    List<Object[]> findOptionLabelsByVariantIds(@Param("ids") List<Long> ids);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select v

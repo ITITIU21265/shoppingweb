@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  corePlugins: {
+    preflight: false
+  },
   content: [
     "./src/main/resources/templates/**/*.html",
     "./src/main/resources/static/js/**/*.js"
@@ -7,12 +10,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#197fe6",
-        "background-light": "#f6f7f8",
-        "background-dark": "#111921"
+        primary: "var(--primary)",
+        "background-light": "var(--surface-soft)",
+        "background-dark": "var(--text)"
       },
       fontFamily: {
-        display: ["\"Plus Jakarta Sans\"", "sans-serif"]
+        display: ["Manrope", "sans-serif"]
       }
     }
   },

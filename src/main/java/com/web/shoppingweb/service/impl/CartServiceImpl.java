@@ -1,8 +1,11 @@
 package com.web.shoppingweb.service.impl;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -18,6 +21,7 @@ import com.web.shoppingweb.entity.cart.CartStatus;
 import com.web.shoppingweb.entity.product.Product;
 import com.web.shoppingweb.entity.product.ProductVariant;
 import com.web.shoppingweb.entity.product.ProductVariantStatus;
+import com.web.shoppingweb.entity.product.ProductStatus;
 import com.web.shoppingweb.entity.user.User;
 import com.web.shoppingweb.exception.ResourceNotFoundException;
 import com.web.shoppingweb.exception.SelfPurchaseException;
@@ -71,8 +75,10 @@ public class CartServiceImpl implements CartService {
         Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalArgumentException("Your cart is empty."));
 
-        List<CartItemResponseDTO> selectedItems = cartItemRepository.findByCartOrderByCreatedAtAsc(cart).stream()
-                .map(this::toItemResponse)
+        List<CartItem> cartItems = cartItemRepository.findByCartOrderByCreatedAtAsc(cart);
+        Map<Long, OptionLabels> optionLabels = loadOptionLabels(cartItems);
+        List<CartItemResponseDTO> selectedItems = cartItems.stream()
+                .map(item -> toItemResponse(item, optionLabels))
                 .filter(item -> selectedVariantIds.contains(item.getVariantId()))
                 .toList();
 
@@ -85,18 +91,38 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartSummaryDTO addProduct(String username, Long productId, int quantity) {
-        if (quantity < 1) {
-            quantity = 1;
-        }
-
         User user = getUser(username);
-        Product product = productRepository.findById(productId)
-                .filter(Product::isActive)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        Product product = getPurchasableProduct(productId);
+        validateNotSelfPurchase(user, product);
+        ProductVariant variant = resolveDefaultVariant(product);
+
+        return addValidatedVariant(user, product, variant, quantity);
+    }
+
+    @Override
+    public CartSummaryDTO addVariant(String username, Long productId, Long variantId, int quantity) {
+        User user = getUser(username);
+        Product product = getPurchasableProduct(productId);
         validateNotSelfPurchase(user, product);
 
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found"));
+        if (variant.getProduct() == null
+                || !Objects.equals(product.getId(), variant.getProduct().getId())) {
+            throw new IllegalArgumentException("Selected variant does not belong to this product.");
+        }
+
+        return addValidatedVariant(user, product, variant, quantity);
+    }
+
+    private CartSummaryDTO addValidatedVariant(User user,
+                                               Product product,
+                                               ProductVariant variant,
+                                               int quantity) {
+        validatePositiveQuantity(quantity);
+        validateVariantAvailability(product, variant, quantity);
+
         Cart cart = getOrCreateActiveCart(user);
-        ProductVariant variant = resolveDefaultVariant(product);
 
         CartItem cartItem = cartItemRepository.findByCartAndVariant_Id(cart, variant.getId())
                 .orElseGet(() -> {
@@ -108,7 +134,12 @@ public class CartServiceImpl implements CartService {
                     return newItem;
                 });
 
-        cartItem.setQuantity(cartItem.getQuantity() + quantity);
+        int existingQuantity = cartItem.getQuantity() == null ? 0 : cartItem.getQuantity();
+        long requestedTotal = (long) existingQuantity + quantity;
+        if (requestedTotal > variant.getStockQty()) {
+            throw new IllegalArgumentException("Requested quantity exceeds available stock.");
+        }
+        cartItem.setQuantity((int) requestedTotal);
         cartItemRepository.save(cartItem);
         return buildSummary(cart);
     }
@@ -125,6 +156,13 @@ public class CartServiceImpl implements CartService {
         if (quantity <= 0) {
             cartItemRepository.delete(cartItem);
         } else {
+            ProductVariant variant = cartItem.getVariant();
+            Product product = variant.getProduct();
+            if (!isPurchasable(product)) {
+                throw new IllegalArgumentException("Product is no longer available.");
+            }
+            validateNotSelfPurchase(user, product);
+            validateVariantAvailability(product, variant, quantity);
             cartItem.setQuantity(quantity);
             cartItemRepository.save(cartItem);
         }
@@ -164,26 +202,20 @@ public class CartServiceImpl implements CartService {
     }
 
     private ProductVariant resolveDefaultVariant(Product product) {
-        return productVariantRepository.findFirstByProduct_IdAndStatusOrderByIsDefaultDescIdAsc(
+        ProductVariant variant = productVariantRepository.findFirstByProduct_IdAndStatusOrderByIsDefaultDescIdAsc(
                         product.getId(),
                         ProductVariantStatus.ACTIVE
                 )
-                .orElseGet(() -> createDefaultVariant(product));
-    }
-
-    private ProductVariant createDefaultVariant(Product product) {
-        ProductVariant variant = new ProductVariant();
-        variant.setProduct(product);
-        variant.setSku("P" + product.getId() + "-DEFAULT");
-        variant.setPriceAmount(product.getPrice().longValueExact());
-        variant.setDefault(true);
-        variant.setStatus(ProductVariantStatus.ACTIVE);
-        return productVariantRepository.save(variant);
+                .orElseThrow(() -> new IllegalArgumentException("Product has no active variant."));
+        validateVariantAvailability(product, variant, 1);
+        return variant;
     }
 
     private CartSummaryDTO buildSummary(Cart cart) {
-        List<CartItemResponseDTO> items = cartItemRepository.findByCartOrderByCreatedAtAsc(cart).stream()
-                .map(this::toItemResponse)
+        List<CartItem> cartItems = cartItemRepository.findByCartOrderByCreatedAtAsc(cart);
+        Map<Long, OptionLabels> optionLabels = loadOptionLabels(cartItems);
+        List<CartItemResponseDTO> items = cartItems.stream()
+                .map(item -> toItemResponse(item, optionLabels))
                 .toList();
         return buildSummary(items);
     }
@@ -209,9 +241,40 @@ public class CartServiceImpl implements CartService {
                 .toList());
     }
 
-    private CartItemResponseDTO toItemResponse(CartItem cartItem) {
+    private Map<Long, OptionLabels> loadOptionLabels(List<CartItem> cartItems) {
+        if (cartItems.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> variantIds = cartItems.stream()
+                .map(CartItem::getVariant)
+                .map(ProductVariant::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (variantIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Object[]> rows = productVariantRepository.findOptionLabelsByVariantIds(variantIds);
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Long, OptionLabels> labelsByVariantId = new HashMap<>();
+        for (Object[] row : rows) {
+            if (row != null && row.length >= 3 && row[0] instanceof Number id) {
+                labelsByVariantId.put(id.longValue(), new OptionLabels(
+                        row[1] == null ? null : row[1].toString(),
+                        row[2] == null ? null : row[2].toString()
+                ));
+            }
+        }
+        return labelsByVariantId;
+    }
+
+    private CartItemResponseDTO toItemResponse(CartItem cartItem, Map<Long, OptionLabels> optionLabels) {
         ProductVariant variant = cartItem.getVariant();
         Product product = variant.getProduct();
+        OptionLabels labels = optionLabels.getOrDefault(variant.getId(), OptionLabels.EMPTY);
         BigDecimal unitPrice = toDisplayAmount(variant.getPriceAmount());
         BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
@@ -222,6 +285,9 @@ public class CartServiceImpl implements CartService {
                 product.getSlug(),
                 product.getImageUrl(),
                 resolveSellerName(product),
+                variant.getSku(),
+                labels.sizeLabel(),
+                labels.colorName(),
                 cartItem.getQuantity(),
                 unitPrice,
                 lineTotal
@@ -247,6 +313,41 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
+    private Product getPurchasableProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        if (!isPurchasable(product)) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+        return product;
+    }
+
+    private boolean isPurchasable(Product product) {
+        return product != null
+                && product.isActive()
+                && product.getStatus() == ProductStatus.ACTIVE;
+    }
+
+    private void validatePositiveQuantity(int quantity) {
+        if (quantity < 1) {
+            throw new IllegalArgumentException("Quantity must be at least 1.");
+        }
+    }
+
+    private void validateVariantAvailability(Product product, ProductVariant variant, int quantity) {
+        if (variant.getProduct() == null
+                || !Objects.equals(product.getId(), variant.getProduct().getId())) {
+            throw new IllegalArgumentException("Selected variant does not belong to this product.");
+        }
+        if (variant.getStatus() != ProductVariantStatus.ACTIVE) {
+            throw new IllegalArgumentException("Selected variant is no longer available.");
+        }
+        int stockQty = variant.getStockQty() == null ? 0 : variant.getStockQty();
+        if (stockQty < quantity) {
+            throw new IllegalArgumentException("Requested quantity exceeds available stock.");
+        }
+    }
+
     private void validateNotSelfPurchase(User buyer, Product product) {
         User seller = product.getSeller();
         if (buyer.getId() != null
@@ -264,5 +365,9 @@ public class CartServiceImpl implements CartService {
             return BigDecimal.ZERO;
         }
         return BigDecimal.valueOf(amount);
+    }
+
+    private record OptionLabels(String sizeLabel, String colorName) {
+        private static final OptionLabels EMPTY = new OptionLabels(null, null);
     }
 }

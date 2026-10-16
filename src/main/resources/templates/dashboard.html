@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body class="app-body">
@@ -194,7 +195,7 @@
             </article>
             <article class="dashboard-console-metric">
               <span>Total Revenue</span>
-              <strong th:text="'$' + ${#numbers.formatDecimal(adminTotalRevenue, 1, 2)}">$0.00</strong>
+              <strong th:text="${#numbers.formatInteger(adminTotalRevenue, 1, 'COMMA')} + ' VND'">0 VND</strong>
               <small th:text="${adminScopeLabel}">Entire system</small>
             </article>
           </div>
@@ -217,7 +218,7 @@
                 <article th:each="point : ${adminRevenueSeries}" class="dashboard-bar-item">
                   <div class="dashboard-bar-copy">
                     <strong th:text="${point.label}">21/04</strong>
-                    <span th:text="'$' + ${#numbers.formatDecimal(point.amount, 1, 2)}">$0.00</span>
+                    <span th:text="${#numbers.formatInteger(point.amount, 1, 'COMMA')} + ' VND'">0 VND</span>
                   </div>
                   <div class="dashboard-bar-track">
                     <div class="dashboard-bar-fill" th:style="|width:${point.heightPercent}%;|"></div>
@@ -271,7 +272,7 @@
                   </div>
                   <div class="dashboard-console-list-meta">
                     <span class="dashboard-tier-badge" th:classappend="${' tone-' + profile.tierTone}" th:text="${profile.tierLabel}">Tier</span>
-                    <strong th:text="'$' + ${#numbers.formatDecimal(profile.totalSpent, 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(profile.totalSpent, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
@@ -344,7 +345,7 @@
             </article>
             <article class="dashboard-console-metric">
               <span>Seller Revenue</span>
-              <strong th:text="'$' + ${#numbers.formatDecimal(sellerRevenue, 1, 2)}">$0.00</strong>
+              <strong th:text="${#numbers.formatInteger(sellerRevenue, 1, 'COMMA')} + ' VND'">0 VND</strong>
               <small th:text="${sellerLowStockCount} + ' low-stock variants'">0 low stock</small>
             </article>
           </div>
@@ -367,7 +368,7 @@
                   </div>
                   <div class="dashboard-console-list-meta">
                     <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.status.displayName}">Confirmed</span>
-                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(order.subtotalAmount, 2), 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(order.subtotalAmount, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
@@ -390,7 +391,7 @@
                   </div>
                   <div class="dashboard-console-list-meta">
                     <span class="dashboard-stock-pill" th:text="${variant.stockQty} + ' left'">3 left</span>
-                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(variant.priceAmount, 2), 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(variant.priceAmount, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
@@ -435,7 +436,7 @@
                       <div class="product-meta" th:text="${order.customerEmail}">email@example.com</div>
                     </td>
                     <td th:text="${isAdminDashboard ? order.totalQuantity : order.itemsCount}">0</td>
-                    <td th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(order.subtotalAmount, 2), 1, 2)}">$0.00</td>
+                    <td th:text="${#numbers.formatInteger(order.subtotalAmount, 1, 'COMMA')} + ' VND'">0 VND</td>
                     <td>
                       <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.status.displayName}">Confirmed</span>
                     </td>
@@ -492,7 +493,7 @@
                     <p th:text="|SKU: ${item.sku} • Qty: ${item.quantity}|">SKU</p>
                   </div>
                   <div class="dashboard-console-list-meta">
-                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(item.lineTotalAmount, 2), 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(item.lineTotalAmount, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
@@ -533,7 +534,7 @@
                     </div>
                   </div>
                   <div class="dashboard-product-side">
-                    <strong th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(product.price, 1, 'COMMA')} + ' VND'">0 VND</strong>
                     <a class="text-link" th:href="@{/products/{slug}(slug=${product.slug})}">View detail</a>
                   </div>
                 </article>
@@ -556,7 +557,7 @@
                   </div>
                   <div class="dashboard-console-list-meta">
                     <span class="dashboard-stock-pill" th:text="${variant.stockQty} + ' left'">3 left</span>
-                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(variant.priceAmount, 2), 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(variant.priceAmount, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
@@ -573,7 +574,7 @@
             </article>
             <article class="dashboard-console-metric">
               <span>Total LTV</span>
-              <strong th:text="'$' + ${#numbers.formatDecimal(customerTotalLtv, 1, 2)}">$0.00</strong>
+              <strong th:text="${#numbers.formatInteger(customerTotalLtv, 1, 'COMMA')} + ' VND'">0 VND</strong>
               <small>Marketplace customer spend</small>
             </article>
             <article class="dashboard-console-metric">
@@ -631,7 +632,7 @@
                     <td>
                       <span class="dashboard-tier-badge" th:classappend="${' tone-' + profile.tierTone}" th:text="${profile.tierLabel}">Tier</span>
                     </td>
-                    <td th:text="'$' + ${#numbers.formatDecimal(profile.totalSpent, 1, 2)}">$0.00</td>
+                    <td th:text="${#numbers.formatInteger(profile.totalSpent, 1, 'COMMA')} + ' VND'">0 VND</td>
                     <td th:text="${profile.orderCount}">0</td>
                     <td th:text="${profile.user.createdAt != null ? #temporals.format(profile.user.createdAt, 'dd MMM yyyy') : '-'}">23 Apr 2026</td>
                     <td>
@@ -662,9 +663,9 @@
 
               <div class="dashboard-detail-card">
                 <h3>Lifecycle Metrics</h3>
-                <p><strong>LTV:</strong> <span th:text="'$' + ${#numbers.formatDecimal(selectedCustomerProfile.totalSpent, 1, 2)}">$0.00</span></p>
+                <p><strong>LTV:</strong> <span th:text="${#numbers.formatInteger(selectedCustomerProfile.totalSpent, 1, 'COMMA')} + ' VND'">0 VND</span></p>
                 <p><strong>Orders:</strong> <span th:text="${selectedCustomerProfile.orderCount}">0</span></p>
-                <p><strong>Average Order:</strong> <span th:text="'$' + ${#numbers.formatDecimal(selectedCustomerProfile.averageOrderValue, 1, 2)}">$0.00</span></p>
+                <p><strong>Average Order:</strong> <span th:text="${#numbers.formatInteger(selectedCustomerProfile.averageOrderValue, 1, 'COMMA')} + ' VND'">0 VND</span></p>
                 <p><strong>Tier:</strong> <span th:text="${selectedCustomerProfile.tierLabel}">Tier</span></p>
               </div>
             </div>
@@ -695,7 +696,7 @@
                   </div>
                   <div class="dashboard-console-list-meta">
                     <span class="status-badge" th:classappend="${' status-' + #strings.toLowerCase(order.status)}" th:text="${order.status.displayName}">Confirmed</span>
-                    <strong th:text="'$' + ${#numbers.formatDecimal(T(java.math.BigDecimal).valueOf(order.subtotalAmount, 2), 1, 2)}">$0.00</strong>
+                    <strong th:text="${#numbers.formatInteger(order.subtotalAmount, 1, 'COMMA')} + ' VND'">0 VND</strong>
                   </div>
                 </article>
               </div>
